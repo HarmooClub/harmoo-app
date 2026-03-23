@@ -1,0 +1,67 @@
+[
+  {
+    "test": "Health Check",
+    "success": true,
+    "message": "API is healthy",
+    "details": {
+      "status": "healthy",
+      "database": "connected"
+    },
+    "timestamp": "2026-03-21T00:06:47.575654"
+  },
+  {
+    "test": "Categories Endpoint",
+    "success": true,
+    "message": "Found 10 French categories",
+    "details": {
+      "sample_categories": [
+        "music: Musique",
+        "video: Audiovisuel",
+        "photo: Photographie",
+        "design: Arts graphiques",
+        "fashion: Mode"
+      ]
+    },
+    "timestamp": "2026-03-21T00:06:47.623650"
+  },
+  {
+    "test": "Freelancers Endpoint",
+    "success": true,
+    "message": "Only real users returned (10 users)",
+    "details": {
+      "sample_real_users": [
+        "jean.freelance@harmoo.com",
+        "freelancer.test.1773969733@harmoo-test.com",
+        "testfreelancer_6faf381d@harmoo.com"
+      ]
+    },
+    "timestamp": "2026-03-21T00:06:47.674205"
+  },
+  {
+    "test": "Registration with Categories",
+    "success": true,
+    "message": "User registered with correct categories and subcategories",
+    "details": {
+      "categories": [
+        "music"
+      ],
+      "subcategories": [
+        "DJ"
+      ]
+    },
+    "timestamp": "2026-03-21T00:06:47.945480"
+  },
+  {
+    "test": "Booking Cancellation",
+    "success": true,
+    "message": "Booking successfully hard deleted",
+    "details": {
+      "cancel_response": {
+        "message": "R\u00e9servation annul\u00e9e et supprim\u00e9e",
+        "cancellation_fee": 0.0,
+        "cancellation_message": "Gratuit (plus de 72h avant)"
+      }
+    },
+    "timestamp": "2026-03-21T00:06:48.468820"
+  }
+]
