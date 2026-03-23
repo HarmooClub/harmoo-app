@@ -234,21 +234,31 @@ export default function DiscoverScreen() {
 
   const renderHeader = () => (
     <View>
-      {/* Greeting */}
+      {/* Greeting with location */}
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
-          <Text style={[typography.bodySmall, { color: theme.text }]}>
-            Bonjour{user ? `, ${user.full_name.split(' ')[0]}` : ''} 👋
-          </Text>
+          <TouchableOpacity 
+            style={styles.locationLabel}
+            onPress={requestPermission}
+          >
+            <Ionicons 
+              name={location ? 'location' : 'location-outline'} 
+              size={16} 
+              color={location ? theme.primary : theme.textSecondary} 
+            />
+            <Text style={[typography.bodySmall, { color: location ? theme.primary : theme.textSecondary, marginLeft: 4 }]}>
+              {location ? 'Près de chez vous' : 'Activer la localisation'}
+            </Text>
+          </TouchableOpacity>
           <Text style={[typography.h1, { color: theme.title, marginTop: spacing.xs }]}>
-            Découvrez les créatifs
+            Bonjour{user ? `, ${user.full_name.split(' ')[0]}` : ''} 👋
           </Text>
         </View>
         <TouchableOpacity
-          style={[styles.locationButton, { backgroundColor: location ? theme.secondarySoft : theme.card, borderColor: location ? theme.secondary + '40' : theme.border }]}
+          style={[styles.locationButton, { backgroundColor: location ? theme.primarySoft : theme.card, borderColor: location ? theme.primary + '40' : theme.border }]}
           onPress={requestPermission}
         >
-          <Ionicons name={location ? 'location' : 'location-outline'} size={20} color={location ? theme.secondary : theme.textSecondary} />
+          <Ionicons name={location ? 'navigate' : 'navigate-outline'} size={20} color={location ? theme.primary : theme.textSecondary} />
         </TouchableOpacity>
       </View>
 
@@ -460,4 +470,8 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   emptyContainer: { paddingVertical: 80, alignItems: 'center' },
+  locationLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
 });
