@@ -31,16 +31,16 @@ export default function SubscriptionCheckoutScreen() {
         return;
       }
       
-      if (response.data.checkout_url) {
+      const checkoutUrl = response.data.checkout_url || response.data.url;
+      if (checkoutUrl) {
         if (Platform.OS === 'web') {
-          const url = response.data.checkout_url;
           try {
-            window.location.replace(url);
+            window.location.replace(checkoutUrl);
           } catch {
-            window.location.href = url;
+            window.location.href = checkoutUrl;
           }
         } else {
-          await Linking.openURL(response.data.checkout_url);
+          await Linking.openURL(checkoutUrl);
           router.back();
         }
       } else {

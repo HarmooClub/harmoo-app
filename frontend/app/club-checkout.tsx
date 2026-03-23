@@ -25,18 +25,17 @@ export default function ClubCheckoutScreen() {
         : 'https://harmooclub.com';
 
       const response = await subscriptionsApi.createClubCheckout(originUrl);
+      const checkoutUrl = response.data.checkout_url || response.data.url;
       
-      if (response.data.checkout_url) {
+      if (checkoutUrl) {
         if (Platform.OS === 'web') {
-          // Force redirect using multiple methods for better compatibility
-          const url = response.data.checkout_url;
           try {
-            window.location.replace(url);
+            window.location.replace(checkoutUrl);
           } catch {
-            window.location.href = url;
+            window.location.href = checkoutUrl;
           }
         } else {
-          await Linking.openURL(response.data.checkout_url);
+          await Linking.openURL(checkoutUrl);
           router.back();
         }
       } else {
