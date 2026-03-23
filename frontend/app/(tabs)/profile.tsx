@@ -241,7 +241,8 @@ export default function ProfileScreen() {
             <MenuItem icon="analytics-outline" label="Tableau de bord" onPress={() => router.push('/dashboard')} theme={theme} />
             <MenuItem icon="construct-outline" label="Mes services" onPress={() => router.push('/my-services')} theme={theme} />
             <MenuItem icon="images-outline" label="Mon portfolio" onPress={() => router.push('/my-portfolio')} theme={theme} />
-            <MenuItem icon="wallet-outline" label="Caisse" onPress={() => router.push('/cash-register')} theme={theme} last />
+            <MenuItem icon="wallet-outline" label="Caisse" onPress={() => router.push('/cash-register')} theme={theme} />
+            <MenuItem icon="diamond-outline" label="Abonnement" onPress={() => router.push('/membership')} theme={theme} last />
           </Card>
         )}
 
