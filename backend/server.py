@@ -825,19 +825,27 @@ async def get_freelancers(
 
 @api_router.get("/freelancers/{freelancer_id}")
 async def get_freelancer(freelancer_id: str):
+    # Try to find by ID first, then by profile_slug
     freelancer = await db.users.find_one({"id": freelancer_id, "user_type": "freelancer"})
+    if not freelancer:
+        freelancer = await db.users.find_one({"profile_slug": freelancer_id, "user_type": "freelancer"})
+    if not freelancer:
+        # Also check if is_provider_mode is true (for users who are freelancers)
+        freelancer = await db.users.find_one({"id": freelancer_id, "is_provider_mode": True})
+    if not freelancer:
+        freelancer = await db.users.find_one({"profile_slug": freelancer_id, "is_provider_mode": True})
     if not freelancer:
         raise HTTPException(status_code=404, detail="Freelance non trouvé")
     
     freelancer_data = {k: v for k, v in freelancer.items() if k != "hashed_password" and k != "_id"}
     
-    portfolio = await db.portfolio.find({"user_id": freelancer_id}).to_list(50)
+    portfolio = await db.portfolio.find({"user_id": freelancer["id"]}).to_list(50)
     freelancer_data["portfolio"] = [{k: v for k, v in p.items() if k != "_id"} for p in portfolio]
     
-    services = await db.services.find({"freelancer_id": freelancer_id, "is_active": True}).to_list(50)
+    services = await db.services.find({"freelancer_id": freelancer["id"], "is_active": True}).to_list(50)
     freelancer_data["services"] = [{k: v for k, v in s.items() if k != "_id"} for s in services]
     
-    reviews = await db.reviews.find({"freelancer_id": freelancer_id}).to_list(50)
+    reviews = await db.reviews.find({"freelancer_id": freelancer["id"]}).to_list(50)
     freelancer_data["reviews"] = [{k: v for k, v in r.items() if k != "_id"} for r in reviews]
     
     return freelancer_data

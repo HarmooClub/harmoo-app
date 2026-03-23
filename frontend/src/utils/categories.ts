@@ -100,5 +100,5 @@ export function formatDateFR(dateStr?: string | null): string {
 // Generate shareable profile link
 export function getProfileShareUrl(profileSlug?: string | null): string {
   if (!profileSlug) return '';
-  return `harmoo/clu/${profileSlug}`;
+  return `https://harmooclub.com/freelancer/${profileSlug}`;
 }
