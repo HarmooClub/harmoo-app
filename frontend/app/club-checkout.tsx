@@ -28,11 +28,20 @@ export default function ClubCheckoutScreen() {
       
       if (response.data.checkout_url) {
         if (Platform.OS === 'web') {
-          window.location.href = response.data.checkout_url;
+          // Force redirect using multiple methods for better compatibility
+          const url = response.data.checkout_url;
+          try {
+            window.location.replace(url);
+          } catch {
+            window.location.href = url;
+          }
         } else {
           await Linking.openURL(response.data.checkout_url);
           router.back();
         }
+      } else {
+        setError('URL de paiement non reçue');
+        setIsLoading(false);
       }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Erreur lors de la création du paiement');
