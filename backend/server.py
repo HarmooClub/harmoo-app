@@ -283,8 +283,9 @@ class Booking(BaseModel):
     selected_options: List[str] = []
     options_total: float = 0.0
     total_price: float
-    status: str = "pending"
-    payment_status: str = "pending"
+    is_draft: bool = True  # Draft until payment is completed
+    status: str = "pending"  # pending (awaiting provider validation), confirmed, cancelled, completed
+    payment_status: str = "pending"  # pending, paid, refunded
     notes: Optional[str] = ""
     cancellation_fee: float = 0.0
     cancelled_at: Optional[datetime] = None
@@ -863,10 +864,19 @@ async def create_booking(
 
 @api_router.get("/bookings")
 async def get_my_bookings(current_user: dict = Depends(get_current_user)):
-    query = {"$or": [
-        {"client_id": current_user["id"]},
-        {"freelancer_id": current_user["id"]}
-    ]}
+    # Only show non-draft bookings (drafts are created before payment and should not appear)
+    query = {
+        "$and": [
+            {"$or": [
+                {"client_id": current_user["id"]},
+                {"freelancer_id": current_user["id"]}
+            ]},
+            {"$or": [
+                {"is_draft": False},
+                {"is_draft": {"$exists": False}, "payment_status": "paid"}  # Legacy bookings
+            ]}
+        ]
+    }
     bookings = await db.bookings.find(query).sort("date", -1).to_list(100)
     
     enriched = []
@@ -1144,10 +1154,14 @@ async def get_stripe_payment_status(
         commission = transaction["amount"] * commission_rates.get(tier, 0.15)
         freelancer_amount = transaction["amount"] - commission
         
-        # Update booking status
+        # Update booking: mark as non-draft, payment paid, status pending (awaiting provider validation)
         await db.bookings.update_one(
             {"id": transaction["booking_id"]},
-            {"$set": {"payment_status": "paid", "status": "confirmed"}}
+            {"$set": {
+                "is_draft": False,
+                "payment_status": "paid",
+                "status": "pending"  # Awaiting provider validation
+            }}
         )
         
         # Add to cash register
@@ -1193,9 +1207,14 @@ async def stripe_webhook(request: Request):
                     {"$set": {"payment_status": "paid", "updated_at": datetime.utcnow()}}
                 )
                 
+                # Update booking: mark as non-draft, payment paid, status pending (awaiting provider validation)
                 await db.bookings.update_one(
                     {"id": transaction["booking_id"]},
-                    {"$set": {"payment_status": "paid", "status": "confirmed"}}
+                    {"$set": {
+                        "is_draft": False,
+                        "payment_status": "paid",
+                        "status": "pending"  # Awaiting provider validation
+                    }}
                 )
         
         return {"status": "ok"}
