@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, Platform, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,6 +17,8 @@ export default function PersonalInfoScreen() {
   const { user, updateUser } = useAuth();
   
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showOrganizationModal, setShowOrganizationModal] = useState(false);
+  const [organizationInput, setOrganizationInput] = useState(user?.organization || '');
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedProfession, setSelectedProfession] = useState<string | null>(null);
@@ -73,6 +75,23 @@ export default function PersonalInfoScreen() {
     setSelectedProfession(null);
   };
 
+  const handleSaveOrganization = async () => {
+    setIsLoading(true);
+    try {
+      await updateUser({ organization: organizationInput.trim() });
+      setShowOrganizationModal(false);
+      if (Platform.OS === 'web') {
+        window.alert('Organisation mise à jour !');
+      } else {
+        Alert.alert('Succès', 'Organisation mise à jour.');
+      }
+    } catch {
+      Alert.alert('Erreur', 'Impossible de mettre à jour');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const InfoRow = ({ label, value, onPress, editable }: { label: string; value: string; onPress?: () => void; editable?: boolean }) => (
     <TouchableOpacity 
       style={[styles.infoRow, { borderBottomColor: theme.divider }]}
@@ -106,6 +125,14 @@ export default function PersonalInfoScreen() {
           <InfoRow label="Email" value={user?.email || ''} />
           <InfoRow label="Ville" value={user?.city || ''} />
           <InfoRow label="Type de compte" value={user?.user_type === 'freelancer' ? 'Artiste-Entrepreneur' : 'Client'} />
+          {isFreelancer && (
+            <InfoRow 
+              label="Organisation" 
+              value={user?.organization || ''} 
+              onPress={() => setShowOrganizationModal(true)}
+              editable
+            />
+          )}
           {user?.hourly_rate ? <InfoRow label="Tarif horaire" value={`${user.hourly_rate}€/h`} /> : null}
         </Card>
 
@@ -324,6 +351,31 @@ export default function PersonalInfoScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Organization Modal */}
+      <Modal visible={showOrganizationModal} transparent animationType="fade" onRequestClose={() => setShowOrganizationModal(false)}>
+        <View style={styles.glassOverlay}>
+          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setShowOrganizationModal(false)}>
+            <LinearGradient
+              colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.12)', 'rgba(0,0,0,0.32)']}
+              locations={[0, 0.4, 1]}
+              style={StyleSheet.absoluteFill}
+            />
+          </TouchableOpacity>
+          <View style={[styles.orgModalContent, { backgroundColor: theme.card }]}>
+            <View style={styles.handle} />
+            <Text style={[typography.h2, { color: theme.title, marginBottom: spacing.lg }]}>Organisation</Text>
+            <TextInput
+              style={[styles.orgInput, { backgroundColor: theme.background, color: theme.title, borderColor: theme.border }]}
+              value={organizationInput}
+              onChangeText={setOrganizationInput}
+              placeholder="Nom de l'organisation"
+              placeholderTextColor={theme.textSecondary}
+            />
+            <Button title="Enregistrer" onPress={handleSaveOrganization} isLoading={isLoading} style={{ marginTop: spacing.lg }} />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -344,6 +396,17 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     paddingBottom: spacing.sm,
     borderBottomWidth: 0.5,
+  },
+  orgModalContent: {
+    padding: spacing.xl,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+  },
+  orgInput: {
+    borderWidth: 1,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    fontSize: 16,
   },
   // Modal styles
   glassOverlay: {

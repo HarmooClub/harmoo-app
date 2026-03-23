@@ -202,6 +202,12 @@ export default function FreelancerDetailScreen() {
                 <Text style={[typography.labelMedium, { color: theme.primary, marginTop: spacing.xs }]}>
                   {profession || 'Artiste-Entrepreneur'}
                 </Text>
+                {/* Organization name */}
+                {freelancer.organization && (
+                  <Text style={{ color: '#545454', fontWeight: '300', fontSize: 14, marginTop: 2 }}>
+                    {freelancer.organization}
+                  </Text>
+                )}
               </View>
               {/* Membership badge */}
               {freelancer.is_harmoo_club && (

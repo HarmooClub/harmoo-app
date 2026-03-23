@@ -237,6 +237,7 @@ class UserProfile(BaseModel):
     phone: Optional[str] = None
     profile_slug: Optional[str] = None
     email_verified: bool = False
+    organization: Optional[str] = None
 
 class UserProfileUpdate(BaseModel):
     full_name: Optional[str] = None
@@ -252,6 +253,7 @@ class UserProfileUpdate(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
     bank_details: Optional[Dict[str, str]] = None
+    organization: Optional[str] = None
 
 class PortfolioItem(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
