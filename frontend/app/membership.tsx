@@ -183,66 +183,66 @@ export default function MembershipScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         {/* HARMOO CLUB Section */}
-        <View style={[styles.clubCard, { backgroundColor: '#1a1a2e', borderColor: '#FFD700' }]}>
+        <View style={[styles.clubCard, { backgroundColor: theme.card, borderColor: '#DC1B78' }]}>
           <View style={styles.clubHeader}>
-            <View style={[styles.clubBadge, { backgroundColor: '#FFD700' }]}>
-              <Text style={{ color: '#1a1a2e', fontWeight: '800', fontSize: 12 }}>CLUB</Text>
+            <View style={[styles.clubBadge, { backgroundColor: '#DC1B78' }]}>
+              <Text style={{ color: '#fff', fontWeight: '800', fontSize: 12 }}>CLUB</Text>
             </View>
-            <Text style={[typography.h2, { color: '#FFD700', flex: 1 }]}>Harmoo Club</Text>
+            <Text style={[typography.h2, { color: theme.title, flex: 1 }]}>Harmoo Club</Text>
             {isClubMember && (
-              <View style={[styles.memberBadge, { backgroundColor: '#FFD700' }]}>
-                <Ionicons name="checkmark-circle" size={14} color="#1a1a2e" />
-                <Text style={{ color: '#1a1a2e', fontWeight: '700', fontSize: 11, marginLeft: 4 }}>Membre</Text>
+              <View style={[styles.memberBadge, { backgroundColor: '#DC1B78' }]}>
+                <Ionicons name="checkmark-circle" size={14} color="#fff" />
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 11, marginLeft: 4 }}>Membre</Text>
               </View>
             )}
           </View>
 
-          <Text style={[typography.bodySmall, { color: '#fff', marginBottom: spacing.md, opacity: 0.9 }]}>
+          <Text style={[typography.bodySmall, { color: theme.text, marginBottom: spacing.md }]}>
             Rejoignez les {CLUB_MAX_MEMBERS} premiers membres fondateurs et bénéficiez d'avantages exclusifs à vie.
           </Text>
 
           <View style={styles.clubFeatures}>
             <View style={styles.clubFeatureRow}>
-              <Ionicons name="star" size={18} color="#FFD700" />
-              <Text style={[typography.bodySmall, { color: '#fff', marginLeft: spacing.sm }]}>Badge "Club" sur votre profil</Text>
+              <Ionicons name="star" size={18} color="#DC1B78" />
+              <Text style={[typography.bodySmall, { color: theme.text, marginLeft: spacing.sm }]}>Badge "Club" sur votre profil</Text>
             </View>
             <View style={styles.clubFeatureRow}>
-              <Ionicons name="calendar" size={18} color="#FFD700" />
-              <Text style={[typography.bodySmall, { color: '#fff', marginLeft: spacing.sm }]}>Accès aux événements exclusifs</Text>
+              <Ionicons name="calendar" size={18} color="#DC1B78" />
+              <Text style={[typography.bodySmall, { color: theme.text, marginLeft: spacing.sm }]}>Accès aux événements exclusifs</Text>
             </View>
             <View style={styles.clubFeatureRow}>
-              <Ionicons name="pricetag" size={18} color="#FFD700" />
-              <Text style={[typography.bodySmall, { color: '#fff', marginLeft: spacing.sm }]}>Réductions sur les prestations</Text>
+              <Ionicons name="pricetag" size={18} color="#DC1B78" />
+              <Text style={[typography.bodySmall, { color: theme.text, marginLeft: spacing.sm }]}>Réductions sur les prestations</Text>
             </View>
           </View>
 
           <View style={styles.clubPriceRow}>
-            <Text style={[typography.displaySmall, { color: '#FFD700' }]}>{CLUB_PRICE}€</Text>
-            <Text style={[typography.bodySmall, { color: '#fff', marginLeft: spacing.sm, opacity: 0.7 }]}>paiement unique • à vie</Text>
+            <Text style={[typography.displaySmall, { color: '#DC1B78' }]}>{CLUB_PRICE}€</Text>
+            <Text style={[typography.bodySmall, { color: theme.textSecondary, marginLeft: spacing.sm }]}>paiement unique • à vie</Text>
           </View>
 
           {!isClubMember && clubMembersCount < CLUB_MAX_MEMBERS && (
             <>
-              <Text style={[typography.tiny, { color: '#FFD700', textAlign: 'center', marginBottom: spacing.sm }]}>
+              <Text style={[typography.tiny, { color: '#DC1B78', textAlign: 'center', marginBottom: spacing.sm }]}>
                 {CLUB_MAX_MEMBERS - clubMembersCount} places restantes sur {CLUB_MAX_MEMBERS}
               </Text>
               <WebButton
                 onPress={handleJoinClub}
                 style={{
-                  backgroundColor: '#FFD700',
+                  backgroundColor: '#DC1B78',
                   paddingVertical: 14,
                   borderRadius: 12,
                   marginTop: spacing.sm,
                 }}
               >
-                <Text style={{ color: '#1a1a2e', fontWeight: '700', fontSize: 16 }}>Rejoindre le Club</Text>
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Rejoindre le Club</Text>
               </WebButton>
             </>
           )}
 
           {!isClubMember && clubMembersCount >= CLUB_MAX_MEMBERS && (
-            <View style={[styles.soldOutBadge, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
-              <Text style={{ color: '#fff', fontWeight: '600' }}>Complet</Text>
+            <View style={[styles.soldOutBadge, { backgroundColor: theme.border }]}>
+              <Text style={{ color: theme.textSecondary, fontWeight: '600' }}>Complet</Text>
             </View>
           )}
         </View>
