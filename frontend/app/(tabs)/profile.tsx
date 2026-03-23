@@ -218,18 +218,18 @@ export default function ProfileScreen() {
 
         {/* Membership Banner */}
         <TouchableOpacity
-          style={[styles.membershipBanner, { backgroundColor: '#1A1A2E' }]}
-          onPress={() => router.push('/membership')}
+          style={[styles.membershipBanner, { backgroundColor: theme.card, borderColor: '#DC1B78', borderWidth: 2 }]}
+          onPress={() => router.push('/club-checkout')}
           activeOpacity={0.8}
         >
           <View style={styles.membershipLeft}>
             <View style={styles.membershipTitleRow}>
-              <Text style={styles.membershipTitle}>Harmoo Club</Text>
-              <Badge label="Premium" variant="accent" />
+              <Text style={[styles.membershipTitle, { color: theme.title }]}>Harmoo Club</Text>
+              <Badge label="30€ à vie" variant="accent" />
             </View>
-            <Text style={styles.membershipDesc}>Rejoignez les premiers membres</Text>
+            <Text style={[styles.membershipDesc, { color: theme.textSecondary }]}>Rejoignez les premiers membres</Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color="#FFF" />
+          <Ionicons name="chevron-forward" size={20} color="#DC1B78" />
         </TouchableOpacity>
 
         {/* Provider Section */}
@@ -241,8 +241,7 @@ export default function ProfileScreen() {
             <MenuItem icon="analytics-outline" label="Tableau de bord" onPress={() => router.push('/dashboard')} theme={theme} />
             <MenuItem icon="construct-outline" label="Mes services" onPress={() => router.push('/my-services')} theme={theme} />
             <MenuItem icon="images-outline" label="Mon portfolio" onPress={() => router.push('/my-portfolio')} theme={theme} />
-            <MenuItem icon="wallet-outline" label="Caisse" onPress={() => router.push('/cash-register')} theme={theme} />
-            <MenuItem icon="diamond-outline" label="Abonnement" onPress={() => router.push('/subscription')} theme={theme} last />
+            <MenuItem icon="wallet-outline" label="Caisse" onPress={() => router.push('/cash-register')} theme={theme} last />
           </Card>
         )}
 
