@@ -83,6 +83,9 @@ const PLANS = [
   },
 ];
 
+const CLUB_PRICE = 30;
+const CLUB_MAX_MEMBERS = 50;
+
 export default function MembershipScreen() {
   const { theme } = useTheme();
   const { user, refreshUser } = useAuth();
@@ -91,11 +94,14 @@ export default function MembershipScreen() {
   const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [clubMembersCount, setClubMembersCount] = useState(0);
 
   const currentTier = user?.subscription_tier || 'essentiel';
+  const isClubMember = user?.is_harmoo_club || false;
 
   useEffect(() => {
     fetchSubscription();
+    fetchClubCount();
   }, []);
 
   const fetchSubscription = async () => {
@@ -107,6 +113,19 @@ export default function MembershipScreen() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const fetchClubCount = async () => {
+    try {
+      const response = await subscriptionsApi.getClubCount();
+      setClubMembersCount(response.data.count || 0);
+    } catch (error) {
+      console.error('Error fetching club count:', error);
+    }
+  };
+
+  const handleJoinClub = () => {
+    router.push('/club-checkout');
   };
 
   const handleSelectPlan = (planId: string) => {
@@ -163,6 +182,74 @@ export default function MembershipScreen() {
       <ScreenHeader title="Abonnement" />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        {/* HARMOO CLUB Section */}
+        <View style={[styles.clubCard, { backgroundColor: '#1a1a2e', borderColor: '#FFD700' }]}>
+          <View style={styles.clubHeader}>
+            <View style={[styles.clubBadge, { backgroundColor: '#FFD700' }]}>
+              <Text style={{ color: '#1a1a2e', fontWeight: '800', fontSize: 12 }}>CLUB</Text>
+            </View>
+            <Text style={[typography.h2, { color: '#FFD700', flex: 1 }]}>Harmoo Club</Text>
+            {isClubMember && (
+              <View style={[styles.memberBadge, { backgroundColor: '#FFD700' }]}>
+                <Ionicons name="checkmark-circle" size={14} color="#1a1a2e" />
+                <Text style={{ color: '#1a1a2e', fontWeight: '700', fontSize: 11, marginLeft: 4 }}>Membre</Text>
+              </View>
+            )}
+          </View>
+
+          <Text style={[typography.bodySmall, { color: '#fff', marginBottom: spacing.md, opacity: 0.9 }]}>
+            Rejoignez les {CLUB_MAX_MEMBERS} premiers membres fondateurs et bénéficiez d'avantages exclusifs à vie.
+          </Text>
+
+          <View style={styles.clubFeatures}>
+            <View style={styles.clubFeatureRow}>
+              <Ionicons name="star" size={18} color="#FFD700" />
+              <Text style={[typography.bodySmall, { color: '#fff', marginLeft: spacing.sm }]}>Badge "Club" sur votre profil</Text>
+            </View>
+            <View style={styles.clubFeatureRow}>
+              <Ionicons name="calendar" size={18} color="#FFD700" />
+              <Text style={[typography.bodySmall, { color: '#fff', marginLeft: spacing.sm }]}>Accès aux événements exclusifs</Text>
+            </View>
+            <View style={styles.clubFeatureRow}>
+              <Ionicons name="pricetag" size={18} color="#FFD700" />
+              <Text style={[typography.bodySmall, { color: '#fff', marginLeft: spacing.sm }]}>Réductions sur les prestations</Text>
+            </View>
+          </View>
+
+          <View style={styles.clubPriceRow}>
+            <Text style={[typography.displaySmall, { color: '#FFD700' }]}>{CLUB_PRICE}€</Text>
+            <Text style={[typography.bodySmall, { color: '#fff', marginLeft: spacing.sm, opacity: 0.7 }]}>paiement unique • à vie</Text>
+          </View>
+
+          {!isClubMember && clubMembersCount < CLUB_MAX_MEMBERS && (
+            <>
+              <Text style={[typography.tiny, { color: '#FFD700', textAlign: 'center', marginBottom: spacing.sm }]}>
+                {CLUB_MAX_MEMBERS - clubMembersCount} places restantes sur {CLUB_MAX_MEMBERS}
+              </Text>
+              <WebButton
+                onPress={handleJoinClub}
+                style={{
+                  backgroundColor: '#FFD700',
+                  paddingVertical: 14,
+                  borderRadius: 12,
+                  marginTop: spacing.sm,
+                }}
+              >
+                <Text style={{ color: '#1a1a2e', fontWeight: '700', fontSize: 16 }}>Rejoindre le Club</Text>
+              </WebButton>
+            </>
+          )}
+
+          {!isClubMember && clubMembersCount >= CLUB_MAX_MEMBERS && (
+            <View style={[styles.soldOutBadge, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
+              <Text style={{ color: '#fff', fontWeight: '600' }}>Complet</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Divider */}
+        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
         {/* Current Plan Banner */}
         {subscriptionInfo?.cancel_at_period_end && (
           <View style={[styles.warningBanner, { backgroundColor: theme.warningSoft }]}>
@@ -278,6 +365,55 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { padding: spacing.xl, paddingBottom: 40 },
+  // Club styles
+  clubCard: {
+    padding: spacing.lg,
+    borderRadius: radius.xl,
+    borderWidth: 2,
+    marginBottom: spacing.lg,
+  },
+  clubHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  clubBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginRight: spacing.sm,
+  },
+  memberBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  clubFeatures: {
+    marginBottom: spacing.md,
+  },
+  clubFeatureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  clubPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: spacing.sm,
+  },
+  soldOutBadge: {
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: spacing.sm,
+  },
+  divider: {
+    height: 1,
+    marginVertical: spacing.xl,
+  },
+  // Original styles
   warningBanner: {
     flexDirection: 'row',
     alignItems: 'center',

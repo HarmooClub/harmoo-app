@@ -140,6 +140,8 @@ export const subscriptionsApi = {
   verify: (sessionId: string) => api.get(`/subscriptions/verify/${sessionId}`),
   cancel: () => api.post('/subscriptions/cancel'),
   reactivate: () => api.post('/subscriptions/reactivate'),
+  getClubCount: () => api.get('/club/count'),
+  createClubCheckout: (originUrl: string) => api.post('/club/checkout', { origin_url: originUrl }),
 };
 
 // Cash Register API

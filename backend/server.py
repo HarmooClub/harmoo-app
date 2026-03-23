@@ -1649,6 +1649,89 @@ async def stripe_subscription_webhook(request: Request):
         logger.error(f"Subscription webhook error: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
+# ==================== HARMOO CLUB ENDPOINTS ====================
+
+CLUB_PRICE = 30  # €
+CLUB_MAX_MEMBERS = 50
+
+@api_router.get("/club/count")
+async def get_club_count():
+    """Get current number of Harmoo Club members"""
+    count = await db.users.count_documents({"is_harmoo_club": True})
+    return {"count": count, "max": CLUB_MAX_MEMBERS}
+
+@api_router.post("/club/checkout")
+async def create_club_checkout(data: dict, request: Request, current_user: dict = Depends(get_current_user)):
+    """Create Stripe checkout for Harmoo Club lifetime membership"""
+    origin_url = data.get("origin_url", str(request.base_url))
+    
+    # Check if already a member
+    if current_user.get("is_harmoo_club"):
+        raise HTTPException(status_code=400, detail="Vous êtes déjà membre du Club")
+    
+    # Check if club is full
+    count = await db.users.count_documents({"is_harmoo_club": True})
+    if count >= CLUB_MAX_MEMBERS:
+        raise HTTPException(status_code=400, detail="Le Club est complet")
+    
+    # Get or create Stripe customer
+    user = await db.users.find_one({"id": current_user["id"]})
+    customer_id = user.get("stripe_customer_id")
+    
+    if not customer_id:
+        customer = stripe.Customer.create(
+            email=current_user["email"],
+            name=current_user["full_name"],
+            metadata={"user_id": current_user["id"]}
+        )
+        customer_id = customer.id
+        await db.users.update_one(
+            {"id": current_user["id"]},
+            {"$set": {"stripe_customer_id": customer_id}}
+        )
+    
+    # Create one-time payment checkout session
+    session = stripe.checkout.Session.create(
+        customer=customer_id,
+        payment_method_types=["card"],
+        line_items=[{
+            "price_data": {
+                "currency": "eur",
+                "unit_amount": CLUB_PRICE * 100,  # in cents
+                "product_data": {
+                    "name": "Harmoo Club - Adhésion à vie",
+                    "description": "Badge Club, événements exclusifs, réductions sur les prestations"
+                }
+            },
+            "quantity": 1
+        }],
+        mode="payment",
+        success_url=f"{origin_url}/club-success?session_id={{CHECKOUT_SESSION_ID}}",
+        cancel_url=f"{origin_url}/membership",
+        metadata={"user_id": current_user["id"], "type": "club_membership"}
+    )
+    
+    return {"checkout_url": session.url, "session_id": session.id}
+
+@api_router.get("/club/verify/{session_id}")
+async def verify_club_payment(session_id: str, current_user: dict = Depends(get_current_user)):
+    """Verify club payment and activate membership"""
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+        
+        if session.payment_status == "paid" and session.metadata.get("type") == "club_membership":
+            # Activate club membership
+            await db.users.update_one(
+                {"id": current_user["id"]},
+                {"$set": {"is_harmoo_club": True, "club_joined_at": datetime.utcnow()}}
+            )
+            return {"status": "success", "is_harmoo_club": True}
+        else:
+            return {"status": "pending"}
+    except Exception as e:
+        logger.error(f"Club verification error: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
 # ==================== CASH REGISTER ENDPOINTS ====================
 
 @api_router.get("/cash-register")
