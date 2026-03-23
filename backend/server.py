@@ -14,6 +14,9 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 import base64
 import math
+import random
+import string
+import resend
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -28,9 +31,39 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'harmoo-secret-key-change-in-productio
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 
+# Email Configuration (Resend)
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
+EMAIL_FROM = os.environ.get('EMAIL_FROM', 'Harmoo <noreply@harmooclub.com>')
+if RESEND_API_KEY:
+    resend.api_key = RESEND_API_KEY
+
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
+
+# Email sending helper
+async def send_email(to: str, subject: str, html: str):
+    """Send email via Resend API"""
+    if not RESEND_API_KEY:
+        logger.warning(f"[EMAIL SIMULATED] To: {to}, Subject: {subject}")
+        return True
+    try:
+        params = {
+            "from": EMAIL_FROM,
+            "to": [to],
+            "subject": subject,
+            "html": html
+        }
+        resend.Emails.send(params)
+        logger.info(f"Email sent to {to}: {subject}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send email: {e}")
+        return False
+
+def generate_verification_code():
+    """Generate 6-digit verification code"""
+    return ''.join(random.choices(string.digits, k=6))
 
 # Create the main app
 from fastapi.responses import FileResponse
@@ -203,6 +236,7 @@ class UserProfile(BaseModel):
     bank_details: Optional[Dict[str, str]] = None
     phone: Optional[str] = None
     profile_slug: Optional[str] = None
+    email_verified: bool = False
 
 class UserProfileUpdate(BaseModel):
     full_name: Optional[str] = None
@@ -471,6 +505,7 @@ async def register(user: UserCreate):
         categories=user.categories if user.user_type == "freelancer" else [],
         subcategories=user.subcategories if user.user_type == "freelancer" else [],
         is_provider_mode=True if user.user_type == "freelancer" else False,
+        email_verified=False,
     )
     
     # Generate unique profile slug for shareable link
@@ -489,6 +524,32 @@ async def register(user: UserCreate):
     access_token = create_access_token(data={"sub": user_profile.id})
     del user_dict["hashed_password"]
     user_dict.pop("_id", None)
+    
+    # Send email verification code
+    code = generate_verification_code()
+    await db.email_verifications.delete_many({"email": user.email})
+    await db.email_verifications.insert_one({
+        "email": user.email,
+        "user_id": user_profile.id,
+        "code": code,
+        "created_at": datetime.utcnow(),
+        "expires_at": datetime.utcnow() + timedelta(hours=24)
+    })
+    
+    # Send verification email
+    html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
+        <h2 style="color: #DC1B78;">Bienvenue sur Harmoo !</h2>
+        <p>Bonjour {user.full_name},</p>
+        <p>Votre code de vérification est :</p>
+        <div style="background: #f5f5f5; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; margin: 20px 0;">
+            {code}
+        </div>
+        <p>Ce code expire dans 24 heures.</p>
+        <p>À bientôt,<br>L'équipe Harmoo</p>
+    </div>
+    """
+    await send_email(user.email, "Vérifiez votre email - Harmoo", html)
     
     return Token(access_token=access_token, token_type="bearer", user=user_dict)
 
@@ -511,9 +572,68 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     user_data = {k: v for k, v in current_user.items() if k != "hashed_password" and k != "_id"}
     return user_data
 
-# ==================== PASSWORD RESET ====================
+# ==================== EMAIL VERIFICATION ====================
 
-import random
+@api_router.post("/auth/verify-email")
+async def verify_email(data: dict, current_user: dict = Depends(get_current_user)):
+    """Verify user email with 6-digit code"""
+    code = data.get("code", "").strip()
+    if not code:
+        raise HTTPException(status_code=400, detail="Code requis")
+    
+    record = await db.email_verifications.find_one({
+        "user_id": current_user["id"],
+        "code": code
+    })
+    
+    if not record:
+        raise HTTPException(status_code=400, detail="Code invalide")
+    
+    if datetime.utcnow() > record["expires_at"]:
+        raise HTTPException(status_code=400, detail="Code expiré")
+    
+    # Mark email as verified
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {"email_verified": True}}
+    )
+    await db.email_verifications.delete_many({"user_id": current_user["id"]})
+    
+    return {"message": "Email vérifié avec succès", "email_verified": True}
+
+@api_router.post("/auth/resend-verification")
+async def resend_verification(current_user: dict = Depends(get_current_user)):
+    """Resend email verification code"""
+    if current_user.get("email_verified"):
+        raise HTTPException(status_code=400, detail="Email déjà vérifié")
+    
+    code = generate_verification_code()
+    await db.email_verifications.delete_many({"user_id": current_user["id"]})
+    await db.email_verifications.insert_one({
+        "email": current_user["email"],
+        "user_id": current_user["id"],
+        "code": code,
+        "created_at": datetime.utcnow(),
+        "expires_at": datetime.utcnow() + timedelta(hours=24)
+    })
+    
+    html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
+        <h2 style="color: #DC1B78;">Vérification de votre email</h2>
+        <p>Bonjour {current_user['full_name']},</p>
+        <p>Votre nouveau code de vérification est :</p>
+        <div style="background: #f5f5f5; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; margin: 20px 0;">
+            {code}
+        </div>
+        <p>Ce code expire dans 24 heures.</p>
+        <p>À bientôt,<br>L'équipe Harmoo</p>
+    </div>
+    """
+    await send_email(current_user["email"], "Nouveau code de vérification - Harmoo", html)
+    
+    return {"message": "Code envoyé"}
+
+# ==================== PASSWORD RESET ====================
 
 @api_router.post("/auth/forgot-password")
 async def forgot_password(data: dict):
@@ -526,7 +646,7 @@ async def forgot_password(data: dict):
         raise HTTPException(status_code=404, detail="Aucun compte trouvé avec cet email")
     
     # Generate 6-digit code
-    code = str(random.randint(100000, 999999))
+    code = generate_verification_code()
     
     # Store code in DB with expiration (10 minutes)
     await db.reset_codes.delete_many({"email": email})
@@ -536,10 +656,23 @@ async def forgot_password(data: dict):
         "created_at": datetime.utcnow(),
     })
     
-    # SIMULATED: Log the code (in production, send via email)
-    logger.info(f"[SIMULATED EMAIL] Code de récupération pour {email}: {code}")
+    # Send email with code
+    html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
+        <h2 style="color: #DC1B78;">Réinitialisation de mot de passe</h2>
+        <p>Bonjour,</p>
+        <p>Votre code de récupération est :</p>
+        <div style="background: #f5f5f5; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; margin: 20px 0;">
+            {code}
+        </div>
+        <p>Ce code expire dans 10 minutes.</p>
+        <p>Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.</p>
+        <p>À bientôt,<br>L'équipe Harmoo</p>
+    </div>
+    """
+    await send_email(email, "Code de récupération - Harmoo", html)
     
-    return {"message": "Code envoyé", "simulated_code": code}
+    return {"message": "Code envoyé"}
 
 @api_router.post("/auth/verify-reset-code")
 async def verify_reset_code(data: dict):
@@ -1176,6 +1309,30 @@ async def get_stripe_payment_status(
             "created_at": datetime.utcnow()
         }
         await db.cash_register.insert_one(cash_entry)
+        
+        # Send notification email to freelancer
+        if freelancer and booking:
+            client = await db.users.find_one({"id": booking["client_id"]})
+            service = await db.services.find_one({"id": booking["service_id"]})
+            booking_date = booking["date"].strftime("%d/%m/%Y à %H:%M") if booking.get("date") else "Non défini"
+            
+            html = f"""
+            <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
+                <h2 style="color: #DC1B78;">🎉 Nouvelle réservation !</h2>
+                <p>Bonjour {freelancer['full_name']},</p>
+                <p>Vous avez reçu une nouvelle demande de réservation :</p>
+                <div style="background: #f5f5f5; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                    <p><strong>Client :</strong> {client['full_name'] if client else 'Non défini'}</p>
+                    <p><strong>Service :</strong> {service['title'] if service else 'Non défini'}</p>
+                    <p><strong>Date :</strong> {booking_date}</p>
+                    <p><strong>Montant :</strong> {transaction['amount']}€</p>
+                </div>
+                <p style="color: #e74c3c;"><strong>⚠️ Action requise :</strong> Vous avez 24h pour confirmer ou refuser cette réservation.</p>
+                <p>Connectez-vous à l'application pour valider la demande.</p>
+                <p>À bientôt,<br>L'équipe Harmoo</p>
+            </div>
+            """
+            await send_email(freelancer["email"], "🎉 Nouvelle réservation à valider - Harmoo", html)
     
     return {
         "status": status.status,
@@ -1216,6 +1373,32 @@ async def stripe_webhook(request: Request):
                         "status": "pending"  # Awaiting provider validation
                     }}
                 )
+                
+                # Send notification email to freelancer
+                booking = await db.bookings.find_one({"id": transaction["booking_id"]})
+                freelancer = await db.users.find_one({"id": transaction["freelancer_id"]})
+                if freelancer and booking:
+                    client = await db.users.find_one({"id": booking["client_id"]})
+                    service = await db.services.find_one({"id": booking["service_id"]})
+                    booking_date = booking["date"].strftime("%d/%m/%Y à %H:%M") if booking.get("date") else "Non défini"
+                    
+                    html = f"""
+                    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
+                        <h2 style="color: #DC1B78;">🎉 Nouvelle réservation !</h2>
+                        <p>Bonjour {freelancer['full_name']},</p>
+                        <p>Vous avez reçu une nouvelle demande de réservation :</p>
+                        <div style="background: #f5f5f5; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                            <p><strong>Client :</strong> {client['full_name'] if client else 'Non défini'}</p>
+                            <p><strong>Service :</strong> {service['title'] if service else 'Non défini'}</p>
+                            <p><strong>Date :</strong> {booking_date}</p>
+                            <p><strong>Montant :</strong> {transaction['amount']}€</p>
+                        </div>
+                        <p style="color: #e74c3c;"><strong>⚠️ Action requise :</strong> Vous avez 24h pour confirmer ou refuser cette réservation.</p>
+                        <p>Connectez-vous à l'application pour valider la demande.</p>
+                        <p>À bientôt,<br>L'équipe Harmoo</p>
+                    </div>
+                    """
+                    await send_email(freelancer["email"], "🎉 Nouvelle réservation à valider - Harmoo", html)
         
         return {"status": "ok"}
     except Exception as e:
