@@ -1482,7 +1482,13 @@ async def get_or_create_price(tier: str, plan: dict) -> str:
     # Check if we have a stored price ID
     existing = await db.stripe_prices.find_one({"tier": tier})
     if existing:
-        return existing["price_id"]
+        # Verify price still exists in Stripe
+        try:
+            stripe.Price.retrieve(existing["price_id"])
+            return existing["price_id"]
+        except stripe.error.InvalidRequestError:
+            # Price doesn't exist, delete old record
+            await db.stripe_prices.delete_one({"tier": tier})
     
     # Create product and price in Stripe
     product = stripe.Product.create(
