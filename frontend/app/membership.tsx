@@ -63,7 +63,7 @@ const PLANS = [
     priceLabel: '7,99€/mois',
     color: '#10B981',
     features: [
-      { text: '3 services', included: true },
+      { text: 'Services illimités', included: true },
       { text: '0% commission', included: true },
       { text: 'Versement instantané', included: true },
       { text: 'Tableau de bord', included: true },
@@ -166,7 +166,7 @@ export default function MembershipScreen() {
           </View>
 
           <Text style={[typography.bodySmall, { color: theme.text, marginBottom: spacing.md }]}>
-            Rejoignez les {CLUB_MAX_MEMBERS} premiers membres fondateurs et bénéficiez d'avantages exclusifs à vie.
+            Rejoignez les 50 premiers membres fondateurs et bénéficiez d'avantages exclusifs à vie.
           </Text>
 
           <View style={styles.clubFeatures}>
