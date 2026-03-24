@@ -1187,10 +1187,11 @@ async def process_payment(
 
 # ==================== STRIPE PAYMENT ENDPOINTS ====================
 
-from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
+import stripe
 from fastapi import Request
 
 STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY", "")
+stripe.api_key = STRIPE_API_KEY
 
 class CreateCheckoutRequest(BaseModel):
     booking_id: str
@@ -1213,22 +1214,24 @@ async def create_stripe_checkout(
     if booking.get("payment_status") == "paid":
         raise HTTPException(status_code=400, detail="Déjà payé")
     
-    # Get amount from booking (server-side, never from frontend)
     amount = float(booking["total_price"])
-    
-    # Build URLs from provided origin
     success_url = f"{data.origin_url}/payment-success?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{data.origin_url}/booking/{booking['service_id']}"
     
-    # Initialize Stripe
-    host_url = str(request.base_url)
-    webhook_url = f"{host_url}api/webhook/stripe"
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
-    
-    # Create checkout session
-    checkout_request = CheckoutSessionRequest(
-        amount=amount,
-        currency="eur",
+    # Create Stripe checkout session
+    session = stripe.checkout.Session.create(
+        payment_method_types=["card"],
+        line_items=[{
+            "price_data": {
+                "currency": "eur",
+                "unit_amount": int(amount * 100),
+                "product_data": {
+                    "name": "Réservation Harmoo",
+                }
+            },
+            "quantity": 1
+        }],
+        mode="payment",
         success_url=success_url,
         cancel_url=cancel_url,
         metadata={
@@ -1238,12 +1241,10 @@ async def create_stripe_checkout(
         }
     )
     
-    session = await stripe_checkout.create_checkout_session(checkout_request)
-    
     # Create payment transaction record
     transaction = {
         "id": str(uuid.uuid4()),
-        "session_id": session.session_id,
+        "session_id": session.id,
         "booking_id": data.booking_id,
         "client_id": current_user["id"],
         "freelancer_id": booking["freelancer_id"],
@@ -1254,7 +1255,7 @@ async def create_stripe_checkout(
     }
     await db.payment_transactions.insert_one(transaction)
     
-    return {"url": session.url, "session_id": session.session_id}
+    return {"url": session.url, "session_id": session.id}
 
 @api_router.get("/stripe/status/{session_id}")
 async def get_stripe_payment_status(
@@ -1270,25 +1271,20 @@ async def get_stripe_payment_status(
     if transaction["client_id"] != current_user["id"]:
         raise HTTPException(status_code=403, detail="Non autorisé")
     
-    # Check if already processed
     if transaction["payment_status"] == "paid":
         return {"status": "complete", "payment_status": "paid"}
     
     # Get status from Stripe
-    host_url = str(request.base_url)
-    webhook_url = f"{host_url}api/webhook/stripe"
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
-    
-    status = await stripe_checkout.get_checkout_status(session_id)
+    session = stripe.checkout.Session.retrieve(session_id)
+    payment_status = "paid" if session.payment_status == "paid" else "pending"
     
     # Update transaction and booking if paid
-    if status.payment_status == "paid" and transaction["payment_status"] != "paid":
+    if payment_status == "paid" and transaction["payment_status"] != "paid":
         await db.payment_transactions.update_one(
             {"session_id": session_id},
             {"$set": {"payment_status": "paid", "updated_at": datetime.utcnow()}}
         )
         
-        # Get booking and freelancer info for commission
         booking = await db.bookings.find_one({"id": transaction["booking_id"]})
         freelancer = await db.users.find_one({"id": transaction["freelancer_id"]})
         tier = freelancer.get("subscription_tier", "essentiel") if freelancer else "essentiel"
@@ -1297,17 +1293,15 @@ async def get_stripe_payment_status(
         commission = transaction["amount"] * commission_rates.get(tier, 0.15)
         freelancer_amount = transaction["amount"] - commission
         
-        # Update booking: mark as non-draft, payment paid, status pending (awaiting provider validation)
         await db.bookings.update_one(
             {"id": transaction["booking_id"]},
             {"$set": {
                 "is_draft": False,
                 "payment_status": "paid",
-                "status": "pending"  # Awaiting provider validation
+                "status": "pending"
             }}
         )
         
-        # Add to cash register
         cash_entry = {
             "id": str(uuid.uuid4()),
             "freelancer_id": transaction["freelancer_id"],
@@ -1320,7 +1314,6 @@ async def get_stripe_payment_status(
         }
         await db.cash_register.insert_one(cash_entry)
         
-        # Send notification email to freelancer
         if freelancer and booking:
             client = await db.users.find_one({"id": booking["client_id"]})
             service = await db.services.find_one({"id": booking["service_id"]})
@@ -1345,70 +1338,68 @@ async def get_stripe_payment_status(
             await send_email(freelancer["email"], "🎉 Nouvelle réservation à valider - Harmoo", html)
     
     return {
-        "status": status.status,
-        "payment_status": status.payment_status,
-        "amount": status.amount_total / 100,  # Convert from cents
-        "currency": status.currency
+        "status": session.status,
+        "payment_status": payment_status,
+        "amount": session.amount_total / 100 if session.amount_total else 0,
+        "currency": session.currency
     }
 
 @api_router.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
     """Handle Stripe webhooks"""
     body = await request.body()
-    signature = request.headers.get("Stripe-Signature")
-    
-    host_url = str(request.base_url)
-    webhook_url = f"{host_url}api/webhook/stripe"
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
     
     try:
-        webhook_response = await stripe_checkout.handle_webhook(body, signature)
+        event = stripe.Event.construct_from(
+            stripe.util.json.loads(body), stripe.api_key
+        )
         
-        if webhook_response.payment_status == "paid":
-            session_id = webhook_response.session_id
-            transaction = await db.payment_transactions.find_one({"session_id": session_id})
+        if event.type == "checkout.session.completed":
+            session = event.data.object
+            session_id = session.id
             
-            if transaction and transaction["payment_status"] != "paid":
-                await db.payment_transactions.update_one(
-                    {"session_id": session_id},
-                    {"$set": {"payment_status": "paid", "updated_at": datetime.utcnow()}}
-                )
+            if session.payment_status == "paid":
+                transaction = await db.payment_transactions.find_one({"session_id": session_id})
                 
-                # Update booking: mark as non-draft, payment paid, status pending (awaiting provider validation)
-                await db.bookings.update_one(
-                    {"id": transaction["booking_id"]},
-                    {"$set": {
-                        "is_draft": False,
-                        "payment_status": "paid",
-                        "status": "pending"  # Awaiting provider validation
-                    }}
-                )
-                
-                # Send notification email to freelancer
-                booking = await db.bookings.find_one({"id": transaction["booking_id"]})
-                freelancer = await db.users.find_one({"id": transaction["freelancer_id"]})
-                if freelancer and booking:
-                    client = await db.users.find_one({"id": booking["client_id"]})
-                    service = await db.services.find_one({"id": booking["service_id"]})
-                    booking_date = booking["date"].strftime("%d/%m/%Y à %H:%M") if booking.get("date") else "Non défini"
+                if transaction and transaction["payment_status"] != "paid":
+                    await db.payment_transactions.update_one(
+                        {"session_id": session_id},
+                        {"$set": {"payment_status": "paid", "updated_at": datetime.utcnow()}}
+                    )
                     
-                    html = f"""
-                    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
-                        <h2 style="color: #DC1B78;">🎉 Nouvelle réservation !</h2>
-                        <p>Bonjour {freelancer['full_name']},</p>
-                        <p>Vous avez reçu une nouvelle demande de réservation :</p>
-                        <div style="background: #f5f5f5; padding: 20px; border-radius: 10px; margin: 20px 0;">
-                            <p><strong>Client :</strong> {client['full_name'] if client else 'Non défini'}</p>
-                            <p><strong>Service :</strong> {service['title'] if service else 'Non défini'}</p>
-                            <p><strong>Date :</strong> {booking_date}</p>
-                            <p><strong>Montant :</strong> {transaction['amount']}€</p>
+                    await db.bookings.update_one(
+                        {"id": transaction["booking_id"]},
+                        {"$set": {
+                            "is_draft": False,
+                            "payment_status": "paid",
+                            "status": "pending"
+                        }}
+                    )
+                    
+                    booking = await db.bookings.find_one({"id": transaction["booking_id"]})
+                    freelancer = await db.users.find_one({"id": transaction["freelancer_id"]})
+                    if freelancer and booking:
+                        client = await db.users.find_one({"id": booking["client_id"]})
+                        service = await db.services.find_one({"id": booking["service_id"]})
+                        booking_date = booking["date"].strftime("%d/%m/%Y à %H:%M") if booking.get("date") else "Non défini"
+                        
+                        html = f"""
+                        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
+                            <h2 style="color: #DC1B78;">🎉 Nouvelle réservation !</h2>
+                            <p>Bonjour {freelancer['full_name']},</p>
+                            <p>Vous avez reçu une nouvelle demande de réservation :</p>
+                            <div style="background: #f5f5f5; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                                <p><strong>Client :</strong> {client['full_name'] if client else 'Non défini'}</p>
+                                <p><strong>Service :</strong> {service['title'] if service else 'Non défini'}</p>
+                                <p><strong>Date :</strong> {booking_date}</p>
+                                <p><strong>Montant :</strong> {transaction['amount']}€</p>
+                            </div>
+                            <p style="color: #e74c3c;"><strong>⚠️ Action requise :</strong> Vous avez 24h pour confirmer ou refuser cette réservation.</p>
+                            <p>Connectez-vous à l'application pour valider la demande.</p>
+                            <p>À bientôt,<br>L'équipe Harmoo</p>
                         </div>
-                        <p style="color: #e74c3c;"><strong>⚠️ Action requise :</strong> Vous avez 24h pour confirmer ou refuser cette réservation.</p>
-                        <p>Connectez-vous à l'application pour valider la demande.</p>
-                        <p>À bientôt,<br>L'équipe Harmoo</p>
-                    </div>
-                    """
-                    await send_email(freelancer["email"], "🎉 Nouvelle réservation à valider - Harmoo", html)
+                        """
+                        await send_email(freelancer["email"], "🎉 Nouvelle réservation à valider - Harmoo", html)
         
         return {"status": "ok"}
     except Exception as e:
