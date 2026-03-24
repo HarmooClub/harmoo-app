@@ -1439,6 +1439,13 @@ async def create_subscription_checkout(
     user = await db.users.find_one({"id": current_user["id"]})
     customer_id = user.get("stripe_customer_id")
     
+    # Verify customer exists in Stripe, recreate if not
+    if customer_id:
+        try:
+            stripe.Customer.retrieve(customer_id)
+        except stripe.error.InvalidRequestError:
+            customer_id = None  # Customer doesn't exist, will recreate
+    
     if not customer_id:
         customer = stripe.Customer.create(
             email=user["email"],
@@ -1670,6 +1677,13 @@ async def create_club_checkout(data: dict, request: Request, current_user: dict 
     # Get or create Stripe customer
     user = await db.users.find_one({"id": current_user["id"]})
     customer_id = user.get("stripe_customer_id")
+    
+    # Verify customer exists in Stripe, recreate if not
+    if customer_id:
+        try:
+            stripe.Customer.retrieve(customer_id)
+        except stripe.error.InvalidRequestError:
+            customer_id = None  # Customer doesn't exist, will recreate
     
     if not customer_id:
         customer = stripe.Customer.create(
