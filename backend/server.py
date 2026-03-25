@@ -71,6 +71,11 @@ import os as os_module
 
 app = FastAPI(title="Harmoo Marketplace API")
 
+# Health check route at root
+@app.get("/")
+def health():
+    return {"status": "ok"}
+
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
