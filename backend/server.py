@@ -16,7 +16,7 @@ import base64
 import math
 import random
 import string
-import resend
+# import resend  # Temporarily disabled for deployment
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -31,35 +31,21 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'harmoo-secret-key-change-in-productio
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 
-# Email Configuration (Resend)
+# Email Configuration (Temporarily disabled)
 RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
 EMAIL_FROM = os.environ.get('EMAIL_FROM', 'Harmoo <noreply@harmooclub.com>')
-if RESEND_API_KEY:
-    resend.api_key = RESEND_API_KEY
+# if RESEND_API_KEY:
+#     resend.api_key = RESEND_API_KEY
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
-# Email sending helper
+# Email sending helper (disabled)
 async def send_email(to: str, subject: str, html: str):
-    """Send email via Resend API"""
-    if not RESEND_API_KEY:
-        logger.warning(f"[EMAIL SIMULATED] To: {to}, Subject: {subject}")
-        return True
-    try:
-        params = {
-            "from": EMAIL_FROM,
-            "to": [to],
-            "subject": subject,
-            "html": html
-        }
-        resend.Emails.send(params)
-        logger.info(f"Email sent to {to}: {subject}")
-        return True
-    except Exception as e:
-        logger.error(f"Failed to send email: {e}")
-        return False
+    """Send email - temporarily disabled"""
+    logger.info(f"[EMAIL DISABLED] To: {to}, Subject: {subject}")
+    return True
 
 def generate_verification_code():
     """Generate 6-digit verification code"""
