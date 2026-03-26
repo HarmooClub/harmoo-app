@@ -20,6 +20,7 @@ function RootLayoutNav() {
         }}
       >
         <Stack.Screen name="index" />
+        <Stack.Screen name="waiting-room" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen 

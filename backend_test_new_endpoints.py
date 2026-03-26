@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime, timedelta
 
 # Base URL for the API
-BASE_URL = "https://stripe-payout-app.preview.emergentagent.com/api"
+BASE_URL = "https://april-8-launch.preview.emergentagent.com/api"
 
 class HarmooNewEndpointsTester:
     def __init__(self):

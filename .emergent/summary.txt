@@ -1,185 +1,159 @@
 <analysis>**original_problem_statement:**
-The user's initial request was to apply an advanced glassmorphism visual effect with feathered edges to all overlays and modals. Over the course of the session, the user made numerous additional requests, including:
-- Adding a gradient overlay to freelancer cards in the feed.
-- Removing the text overlay from freelancer profile pages.
-- Displaying commission details on the booking summary page.
-- Adding and updating an IA (AI) category with specific professions.
-- Integrating Stripe for one-time payments and recurring subscriptions.
-- Implementing a bank withdrawal system for freelancers.
-- Fixing login/registration bugs and deleting specific user accounts.
-- Centering text on the registration page.
-- Adding new professions (Make Up Artist, artisan fleuriste) to existing categories.
-- Deploying the application as a web app with a custom domain ().
-- Exporting the entire project to a GitHub repository.
+The user's initial goal was to push the codebase to their GitHub repository and deploy the application (Frontend on Vercel, Backend on Render, DB on MongoDB Atlas). Throughout the session, the user requested several major feature additions and bug fixes, including:
+- Fixing the booking flow (creating a reservation only *after* payment).
+- Allowing freelancers to change their category/profession and add an Organization to their profile.
+- Adding a Harmoo Club lifetime membership tier (30€, limited to 50 members) alongside existing subscriptions.
+- Displaying geolocation (près de chez vous) in the feed header.
+- Supporting slug-based URLs for sharing profiles.
+- Fixing Vercel PWA 404 routing issues.
+- **PRODUCT REQUIREMENTS (Latest Request):** Create a pre-launch landing page (waiting room) for users to register before the official April 8th launch. Redesign the auth  page to have a young and creative Spotify-inspired design. Add specific copywriting (Recrée les règles du jeu, Rencontre des créatifs avec qui réaliser ton projet près de chez toi). Swap the dark blue color  to  globally.
 
-**PRODUCT REQUIREMENTS:**
-1.  **Glassmorphism Effect:** Apply a progressive contour treatment (feathering) to all modals, using a gradient opacity mask for soft edges.
-2.  **Commission Display:** Show the commission rate and amount on the booking confirmation screen.
-3.  **Category Management:** Add a new IA category and other professions as specified.
-4.  **Stripe Payments:** Integrate Stripe to handle one-time service payments and recurring monthly subscription payments.
-5.  **Freelancer Payouts:** Allow freelancers to add their bank details and request withdrawals of their earnings, with payout frequency determined by their subscription tier.
-6.  **Web Deployment & Custom Domain:** The user wants the application available as a web app accessible via .
-7.  **Code Export:** The entire codebase must be pushed to the user's GitHub repository.
+**User's preferred language**: French (INSTRUCT next agent to respond in French only).
 
-**User's preferred language**: French
-
-**what currently exists?**
-The agent successfully implemented a vast number of features. The application now has the requested glassmorphism effect on modals, a gradient on feed cards, and updated categories. A full Stripe integration for both one-time payments and recurring subscriptions is complete, using the user's **LIVE API keys**. A system for freelancers to add bank details and request payouts based on their subscription tier has also been built. Numerous UI tweaks and bug fixes, including a recurring issue with the subscription button, were addressed. The agent also assisted the user in understanding the process of deploying the Expo app for the web, which involves exporting the code to GitHub and using an external hosting service like Vercel. The codebase is fully committed locally and is ready to be pushed to the user's GitHub repository.
+**what currently exists?** 
+The application is fully pushed to GitHub. The frontend is configured for Vercel (with  for SPA routing), and the backend is configured for Render (with  and  for Python 3.11.9). The booking flow now correctly uses draft states until Stripe payments are confirmed. Profile sharing uses slugs. A 30€ Harmoo Club membership is active. **Crucially, the backend now uses the native  SDK instead of , and email verification (Resend) has been temporarily disabled/commented out to allow the Render deployment to succeed.** The agent was in the middle of building the pre-launch waiting room and redesigning the auth welcome page.
 
 **Last working item**:
-*   Last item agent was working: The agent was in the process of pushing the entire application codebase to the user's specified GitHub repository (). The user provided a Personal Access Token (PAT) for authentication. The agent has successfully initialized the local git repository, added all project files, and created a commit. The final step is to push the changes to the remote repository.
-*   Status: IN PROGRESS
-*   Agent Testing Done: N/A
-*   Which testing method agent to use? N/A
-*   User Testing Done: N/A
+- **Last item agent was working**: Designing the pre-launch landing page () and redesigning the auth welcome screen () with a young and creative aesthetic, including downloading provided logos and attempting to globally replace  with .
+- **Status**: IN PROGRESS
+- **Agent Testing Done**: N
+- **Which testing method agent to use?**: Frontend testing agent / Screenshot tool (to verify the new UI for the auth pages).
+- **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-*   **Issue 1: Push Code to User's GitHub Repository (P0)**
-    *   Description: The user wants to export the project to their GitHub account to facilitate web deployment on Vercel. All files have been committed locally. The final push to the remote repository is pending.
-    *   Attempted fixes: The agent tried explaining the manual process, created a downloadable ZIP as an alternative, and finally received a GitHub token from the user to perform the action on their behalf.
-    *   Next debug checklist:
-        1.  Construct the correct  command using the user's provided Personal Access Token for authentication.
-        2.  The command should be:  (or , depending on the default branch name initialized).
-        3.  Execute the command and verify that the push is successful.
-    *   Why fix this issue and what will be achieved with the fix?: This will complete the user's request to export their code, enabling them to proceed with deploying their application on Vercel and connecting their custom domain.
-    *   Status: IN PROGRESS
-    *   Is recurring issue? N
-    *   Should Test frontend/backend/both after fix?: N/A
-    *   Blocked on other issue: None
+- **Issue 1: Pre-launch Landing Page & Auth Redesign (P0)**
+   - **Attempted fixes**: The agent created  and overwrote  but got cut off while adjusting styles in  to replace  with .
+   - **Next debug checklist**: 
+     - Complete  and  using the downloaded assets (, , etc.).
+     - Ensure the text Recrée les règles du jeu and Rencontre des créatifs avec qui réaliser ton projet près de chez toi are properly styled.
+     - Globally replace  with  in the frontend codebase.
+     - Ensure the user alvin.m11@yahoo.com (Manolo) bypasses the waiting room to access the feed.
+   - **Why fix this issue and what will be achieved with the fix?**: The user is launching on April 8th and needs a landing page to capture registrations while locking the main app feed for non-admin users.
+   - **Status**: IN PROGRESS
+   - **Is recurring issue?**: N
+   - **Should Test frontend/backend/both after fix?**: Frontend (Screenshot tool).
+   - **Blocked on other issue**: None.
+
+- **Issue 2: Re-enable Email Verification / Resend (P1)**
+   - **Attempted fixes**: The agent commented out all Resend logic and removed it from  because it was blocking the Render deployment.
+   - **Next debug checklist**: Once the backend is perfectly stable on Render, re-add  to , uncomment the  logic in , and test the email flow.
+   - **Why fix this issue and what will be achieved with the fix?**: Restores crucial security (email verification) and user notifications that were bypassed for deployment troubleshooting.
+   - **Status**: NOT STARTED
+   - **Is recurring issue?**: N
+   - **Should Test frontend/backend/both after fix?**: Backend.
+   - **Blocked on other issue**: None.
 
 **In progress Task List**:
-*   None.
+- **Task 1: Global Color Swap**
+   - **Where to resume**: Search the frontend codebase for  and replace it with  (specifically for dark mode/text as requested). Agent left off trying to edit .
+   - **What will be achieved with this?**: Meets user's UI branding requirements for the new launch.
+   - **Status**: IN PROGRESS
+   - **Should Test frontend/backend/both after fix?**: Frontend.
+   - **Blocked on something**: None.
 
-**Upcoming and Future Tasks**
-*   **Upcoming Tasks:**
-    *   **P0: Guide User on Vercel Deployment:** After the code is pushed to GitHub, guide the user through the Vercel deployment process. Remind them of the correct settings:
-        - **Framework:** Other
-        - **Root Directory:** 
-        - **Build Command:** - Making sure project is set up correctly...
-- Making sure project is set up correctly...
-        - **Output Directory:** 
-    *   **P1: Guide User on Custom Domain:** Assist the user in connecting their  domain within the Vercel dashboard.
-    *   **P2: Remove Temporary Download Endpoint:** After confirming the successful push to GitHub, remove the temporary  endpoint and the associated ZIP file () from  to clean up the code.
-*   **Future Tasks:**
-    *   **Real Email Service Integration:** The Forgot Password flow still uses a simulated email service. This should be replaced with a real service like SendGrid.
+**Upcoming and Future Tasks**:
+- Restore real Email Service Integration for Forgot Password and Registration (currently bypassed).
+- Guide the user to re-deploy the frontend to Vercel to reflect the new landing page changes.
 
-**Completed work in this session**
-- **UI/UX Enhancements:**
-  - Implemented an advanced glassmorphism effect on all modals (, , etc.) using a reusable  component.
-  - Added a gradient overlay to freelancer cards on the homepage feed ().
-  - Removed the text overlay from the main image on the freelancer profile page ().
-- **Feature Implementation:**
-  - Integrated **Stripe (with LIVE keys)** for one-time payments and recurring subscriptions (, ).
-  - Built a freelancer payout system, allowing users to add bank details and request withdrawals based on their subscription tier ().
-  - Added a new IA category and several new professions (Make Up Artist, Artisan Fleuriste) to both backend and frontend (, ).
-  - Added detailed commission information to the booking summary page.
-- **Bug Fixes & Maintenance:**
-  - Resolved a critical bug where the Choisir (Select) button on the subscription page was unresponsive on web by implementing a platform-specific solution.
-  - Investigated and confirmed the memorize account feature was still functional after a user report.
-  - Fixed a redirection issue after user registration.
-  - Deleted multiple user accounts from the database as requested.
-  - Addressed deployment health check warnings by generating a secure  and adding missing  variables.
-- **User Support:**
-  - Used the  to explain deployment processes, billing, and the distinction between mobile and web app deployments for custom domains.
-  - Guided the user through the process of exporting their code to GitHub.
+**Completed work in this session**:
+- Pushed code to GitHub (User resolved Secret Scanning blocks).
+- Deployed Backend to Render (,  Python 3.11.9 added).
+- Swapped  Stripe implementation for native  SDK.
+- Fixed Booking Flow (Bookings are now  until Stripe webhook confirms payment).
+- Added  to fix Vercel PWA 404 routing errors.
+- Added Harmoo Club membership tier and modified standard subscription texts.
+- Added Organization field to freelancer profiles.
+- Enabled Slug-based profile sharing ().
+- Replaced feed header text with Geolocation (Près de chez vous).
+- Updated Favicon and App Icon.
 
-**Earlier issues found/mentioned but not fixed**
-*   **Issue 1: Linting Errors:** The agent encountered  in several TypeScript files. These were dismissed as configuration issues and never resolved. While the app appears to function, these errors could indicate underlying syntax or setup problems that may cause issues later.
-    - Debug checklist: Run  to identify all parsing errors and fix the TypeScript syntax in the affected files (e.g., , ).
+**Earlier issues found/mentioned but not fixed**:
+- **Issue 1: GitHub Secret Scanning Block**
+  - **Debug checklist**: Every time you commit and push, GitHub will reject the push because  and  contain LIVE Stripe Keys.
+  - **Why to solve this issue**: Prevents code backup.
+  - **Status**: recurring. The user has to manually click the GitHub unblock link provided in the bash error output *every time* you push. Inform the user when you push.
 
-**Known issue recurrence from previous fork**
-*   None.
+**Known issue recurrence from previous fork**:
+- **Stripe API Keys Expiring**: The user frequently provides LIVE Stripe keys that expire quickly or get rotated. If Stripe throws an authentication error, ask the user for a new key.
+- **Recurrence count**: 5+ times in this session.
+- **Status**: RESOLVED (for now, but watch out).
 
-**Code Architecture**
+**Code Architecture**:
+- : FastAPI backend, using MongoDB Atlas. (Deployed on Render).
+- : Expo React Native app. (Deployed on Vercel).
+-  & : Render deployment configs.
+- : Vercel SPA routing config.
 
+**Key Technical Concepts**:
+- **Render Deployment**: The backend is hosted on Render. Do NOT use  for Stripe/Emails, as they cause build failures on Render. Use standard PyPI packages.
+- **Vercel SPA**: The frontend is a single-page app on Vercel.  rewrites routes to .
+- **Pre-Launch Mode**: The app is entering a Waiting Room state for all users except the admin ().
 
-**Key Technical Concepts**
-*   **Stripe Integration:** Using LIVE keys for both one-time payments (Payment Intents) and recurring revenue (Stripe Subscriptions). The backend handles checkout session creation and webhook processing.
-*   **GitHub PAT (Personal Access Token):** The agent received a user-generated token to authenticate and push code to the user's private repository.
-*   **Expo for Web Deployment:** The user's goal is to deploy the Expo app as a web application. The agent has explained this requires exporting the project (- Making sure project is set up correctly...
-- Making sure project is set up correctly...) and hosting it on a platform like Vercel.
-*   **Platform-Specific UI:** Diagnosed and fixed a web-only bug with touchable components by using a conditional render for a native HTML  with an  handler.
-*   **Dynamic API Endpoint:** Created a temporary endpoint in FastAPI to serve a static ZIP file for download.
+**key DB schema**:
+- : Added  (bool), ,  (string).
+- : Added  (bool). True until paid.
 
-**key DB schema**
-*   **users**:
-    *    (dict): Added to store IBAN, BIC, and account holder name.
-    *    (string): To link user with Stripe for subscriptions.
-    *    (dict): Stores current subscription status, tier, and renewal date.
-*   **cash_register_entries**: Tracks individual earnings per transaction for a freelancer.
-*   **payout_requests**: Logs withdrawal requests, their status, and amounts.
+**changes in tech stack**:
+- **Removed**:  (caused Render build failures).
+- **Added**:  (Native Python SDK),  (for validation).
+- **Disabled**:  (Email sending commented out to stabilize Render).
 
-**changes in tech stack**
-*   : Installed and used for UI effects.
-*    (Python): Installed in the backend for payment processing.
-*   : Installed in the frontend.
-
-**All files of reference**
-*   : Contains all new business logic for payments, subscriptions, and payouts.
-*   : The main UI for handling subscriptions.
-*   : The main UI for handling freelancer earnings and withdrawals.
-*   : Contains the one-time payment flow.
+**All files of reference**:
+- : Contains Stripe Webhooks, Auth (emails disabled), Subscriptions.
+- : Being overwritten for the new landing page.
+- : New file for the pre-launch holding area.
+-  & : Critical for Render.
+- : Critical for Vercel.
 
 **Areas that need refactoring**:
-*   The temporary download endpoint () in  and the associated ZIP file should be removed once the code is successfully pushed to GitHub.
-*   The logic for adding/editing bank details is currently inside . It could be moved to a dedicated, reusable component or its own screen for better separation of concerns.
+-  has a lot of commented-out email logic. Once the deployment is stable,  should be properly re-integrated without breaking Render builds.
 
-**key api endpoints**
-*   **Stripe (One-Time Payment):**
-    *   : Creates a checkout session for a service booking.
-    *   : Handles webhook events from Stripe to confirm payments.
-*   **Stripe (Subscriptions):**
-    *   : Creates a checkout session for a new subscription.
-    *   : Cancels an active subscription.
-    *   : Retrieves the user's current subscription status.
-*   **Freelancer Payouts:**
-    *   : To save/update a freelancer's bank information.
-    *   : To retrieve a freelancer's bank information.
-    *   : To initiate a withdrawal request.
-*   **Temporary:**
-    *   : To allow the user to download the project ZIP.
+**key api endpoints**:
+- : One-time bookings.
+- : Standard plans.
+- : 30€ Lifetime Harmoo Club.
+- : Now handles both booking confirmations and subscription/club activations.
 
-**Critical Info for New Agent**
-*   **The absolute highest priority (P0) is to push the code to the user's GitHub repository using the provided token.** The command is .
-*   **CRITICAL RISK:** The user has provided **LIVE** Stripe keys. All payment-related actions are real and will process actual money. Advise the user to switch to test keys for any further development or testing.
-*   The user is non-technical and requires clear, simple, step-by-step instructions. Avoid technical jargon.
-*   The user's ultimate goal is to have the app running on . The next steps after the GitHub push will be to guide them through Vercel deployment.
-*   The user's GitHub token is: .
+**Critical Info for New Agent**:
+1. **DO NOT run Emergent Integrations**: The backend is deployed on Render. Any Emergent-specific packages will fail the Render build.
+2. **Database is External**: The app uses MongoDB Atlas now.  is fetched from .
+3. **Email is Disabled**: To fix a Render build issue, email verification was bypassed. Do not be surprised if the auth flow skips email codes.
+4. **Pushing to GitHub**: The user has LIVE Stripe keys in the code. GitHub will block *every* . You must read the bash output, extract the  link, give it to the user, and wait for them to click it before attempting to push again.
 
-**documents and test reports created in this job**
-*    (A temporary archive of the project).
+**documents and test reports created in this job**:
+None.
 
-**Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** I need to push the code to my GitHub repo: .
-2.  **Agent:** I need credentials.
-3.  **User:** Let's use GitHub Desktop (Option 1).
-4.  **Agent:** Creates a ZIP file for manual upload.
-5.  **User:** add local repository isn't working. **(UNRESOLVED by user)**
-6.  **User:** nothing works. **(UNRESOLVED by user)**
-7.  **Agent:** Suggests providing a GitHub token instead.
-8.  **User:** do it all for me.
-9.  **Agent:** I still need the token to act on your behalf.
-10. **User:** *Provides the GitHub token *. **(PENDING ACTION)**
+**Last 10 User Messages and any pending HUMAN messages**:
+1. **User**: Render build fails because Python 3.14 compiles Rust. Add  with python-3.11.9. (Done)
+2. **User**: Build fails on pydantic-core. Update . (Done)
+3. **User**: Backend tries to connect to localhost. Configure MongoDB Atlas. (Done, used user's provided URI).
+4. **User**: Render says No open ports. Check  and fix Start command. (Done, agent pointed Procfile to ).
+5. **User**: Check if I can login without Emergent preview being active. (Done, Render is live).
+6. **User**: Delete all current users quickly. (Done, agent created a temp endpoint to wipe DB).
+7. **User**: I can't login with Harmoo Club account. (Done, DB was empty).
+8. **User**: You didn't delete the Harmoo Club profile! (Done, DB confirmed empty).
+9. **User**: Put this provided image as favicon and app icon. (Done).
+10. **User**: (PENDING) Build a pre-launch waiting room landing page for April 8th. Redesign the auth welcome page (Spotify style, young and creative). Change color  to . Exclude admin  from the waiting room lock.
 
-**Project Health Check:**
-*   **Broken:** The subscription Choisir button was repeatedly broken on the web platform. The latest fix (using a native HTML ) has not been verified by the user and may still be problematic.
-*   **Mocked:**
-    *   Forgot Password email functionality (carried over from the previous fork).
+**Project Health Check**:
+- **Broken**: Pre-launch waiting room logic is incomplete. Global color swap is incomplete.
+- **Mocked**: Email verification (bypassed entirely to fix Render deploy).
 
-**3rd Party Integrations**
-*   **Stripe (Payments)** — uses User-provided **LIVE** API Key.
-*   **Expo Image Picker**
-*   **Expo Blur**
+**3rd Party Integrations**:
+- Stripe (Payments) — requires User API Key (LIVE keys in use). Native SDK.
+- MongoDB Atlas (Database) — requires User Connection String.
+- Resend (Emails) — requires User API Key (Currently Disabled).
 
-**Testing status**
-*   Testing agent used after significant changes: NO
-*   Troubleshoot agent used after agent stuck in loop: NO
-*   Test files created: []
-*   Known regressions: User initially reported the memorize account feature was broken, although the code was intact. The subscription button has been a recurring point of failure during the session.
+**Testing status**:
+- Testing agent used after significant changes: NO
+- Troubleshoot agent used after agent stuck in loop: NO (Support agent used once for hosting options).
+- Test files created: []
+- Known regressions: Email verification removed.
 
-**Credentials to test flow:**
-*   **GitHub Token:** 
-*   **User Accounts:** The database was wiped multiple times. The last known accounts (Manolo) were deleted or had unknown credentials. The next agent must create a new user account for any testing.
+**Credentials to test flow**:
+- MongoDB: 
+- Stripe: (Check backend  or  for the latest  key).
+- Admin User (to bypass waiting room): 
 
-**What agent forgot to execute**
-*   The final  command to send the committed code to the user's GitHub repository.</analysis>
+**What agent forgot to execute**:
+The agent started modifying files to replace  with  but ran out of context before completing the global find-and-replace. The pre-launch waiting room redirection logic is not yet hooked up to the navigation/auth flow.</analysis>

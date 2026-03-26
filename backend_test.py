@@ -10,7 +10,7 @@ import sys
 from typing import Dict, Any, Optional
 
 # Base URL for the API
-BASE_URL = "https://stripe-payout-app.preview.emergentagent.com/api"
+BASE_URL = "https://april-8-launch.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_CREDENTIALS = {

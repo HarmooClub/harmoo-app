@@ -228,7 +228,7 @@ export default function CashRegisterScreen() {
           
           {(!data?.entries || data.entries.length === 0) ? (
             <View style={styles.emptyHistory}>
-              <Ionicons name="receipt-outline" size={40} color="#031140" />
+              <Ionicons name="receipt-outline" size={40} color="#000000" />
               <Text style={[typography.bodySmall, { color: theme.textSecondary, marginTop: spacing.md }]}>
                 Aucune transaction pour le moment
               </Text>

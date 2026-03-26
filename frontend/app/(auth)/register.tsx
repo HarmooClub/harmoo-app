@@ -93,9 +93,8 @@ export default function RegisterScreen() {
       const categories = selectedCategory ? [selectedCategory] : [];
       const subcategories = selectedProfession ? [selectedProfession] : [];
       await register(email, password, fullName, userType, categories, subcategories);
-      // Small delay to ensure state is updated before navigation
       setTimeout(() => {
-        router.replace('/(tabs)');
+        router.replace('/waiting-room');
       }, 100);
     } catch (error: any) {
       Alert.alert('Erreur', error.response?.data?.detail || 'Une erreur est survenue');

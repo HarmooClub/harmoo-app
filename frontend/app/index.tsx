@@ -12,7 +12,9 @@ export default function Index() {
   useEffect(() => {
     if (!isLoading) {
       if (user) {
-        router.replace('/(tabs)');
+        // All authenticated users go through waiting room
+        // (waiting-room handles admin bypass & launch date check)
+        router.replace('/waiting-room');
       } else {
         router.replace('/(auth)/welcome');
       }
