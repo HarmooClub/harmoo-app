@@ -378,3 +378,8 @@ if __name__ == "__main__":
     tester = APITester()
     success = tester.run_all_tests()
     sys.exit(0 if success else 1)
+    import os
+import uvicorn
+
+if __name__ == "__main__":
+    uvicorn.run("backend_test:app", host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
