@@ -62,6 +62,12 @@ app = FastAPI(title="Harmoo Marketplace API")
 def health():
     return {"status": "ok"}
 
+# Temporary admin endpoint to delete all users
+@app.delete("/admin/clear-users")
+async def clear_all_users():
+    result = await db.users.delete_many({})
+    return {"deleted": result.deleted_count}
+
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
