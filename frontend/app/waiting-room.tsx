@@ -100,7 +100,7 @@ export default function WaitingRoomScreen() {
           <View style={styles.statusContainer}>
             <View style={styles.statusDot} />
             <Text style={styles.statusText}>
-              Ton compte est prêt ! Complète ton profil en attendant.
+              Ton profil est prêt ! Tu pourras le compléter à la date d'ouverture.
             </Text>
           </View>
         </View>
