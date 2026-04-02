@@ -1,1 +1,3 @@
 node_modules/\n.metro-cache*\n__pycache__/\n*.pyc\n.env\n*.zip
+frontend/.metro-cache*
+__pycache__/
