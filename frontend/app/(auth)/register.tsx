@@ -94,7 +94,7 @@ export default function RegisterScreen() {
       const subcategories = selectedProfession ? [selectedProfession] : [];
       await register(email, password, fullName, userType, categories, subcategories);
       setTimeout(() => {
-        router.replace('/waiting-room');
+        router.replace('/(tabs)');
       }, 100);
     } catch (error: any) {
       Alert.alert('Erreur', error.response?.data?.detail || 'Une erreur est survenue');

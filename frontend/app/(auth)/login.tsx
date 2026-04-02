@@ -87,7 +87,7 @@ export default function LoginScreen() {
         const userData = raw ? JSON.parse(raw) : {};
         await saveAccount({ email: e, password: p, full_name: userData.full_name || e, avatar: userData.avatar });
       }
-      router.replace('/waiting-room');
+      router.replace('/(tabs)');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Identifiants incorrects');
     } finally { setIsLoading(false); }

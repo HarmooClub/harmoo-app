@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator, Image, Dimensions, ImageBackground } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator, Image, Dimensions, ImageBackground, Modal, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -63,6 +63,37 @@ export default function DiscoverScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
+
+  // Auth popup logic
+  const [showAuthPopup, setShowAuthPopup] = useState(false);
+  const actionCountRef = useRef(0);
+  const popupShownRef = useRef(false);
+
+  const triggerAuthPopup = useCallback(() => {
+    if (!user && !popupShownRef.current) {
+      popupShownRef.current = true;
+      setShowAuthPopup(true);
+    }
+  }, [user]);
+
+  const trackAction = useCallback(() => {
+    if (user || popupShownRef.current) return;
+    actionCountRef.current += 1;
+    if (actionCountRef.current >= 3) {
+      triggerAuthPopup();
+    }
+  }, [user, triggerAuthPopup]);
+
+  // Timer: 15s after mount if no actions
+  useEffect(() => {
+    if (user) return;
+    const timer = setTimeout(() => {
+      if (actionCountRef.current === 0) {
+        triggerAuthPopup();
+      }
+    }, 15000);
+    return () => clearTimeout(timer);
+  }, [user, triggerAuthPopup]);
 
   useEffect(() => { requestPermission(); }, []);
   useEffect(() => { loadInitialData(); }, [selectedCategory, location]);
@@ -168,7 +199,7 @@ export default function DiscoverScreen() {
       <TouchableOpacity
         key={item.id}
         style={[styles.masonryCard, { height: cardH }, shadows.sm]}
-        onPress={() => router.push(`/freelancer/${item.id}`)}
+        onPress={() => { trackAction(); router.push(`/freelancer/${item.id}`); }}
         activeOpacity={0.85}
       >
         {/* Full card background image or placeholder */}
@@ -234,6 +265,31 @@ export default function DiscoverScreen() {
 
   const renderHeader = () => (
     <View>
+      {/* Auth banner for non-authenticated users */}
+      {!user && (
+        <TouchableOpacity
+          style={[styles.authBanner, { backgroundColor: theme.primary }]}
+          onPress={() => router.push('/(auth)/welcome')}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.authBannerText}>Rejoins Harmoo</Text>
+          <View style={styles.authBannerButtons}>
+            <TouchableOpacity
+              style={styles.authBannerBtn}
+              onPress={() => router.push('/(auth)/register')}
+            >
+              <Text style={styles.authBannerBtnText}>S'inscrire</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.authBannerBtn, styles.authBannerBtnOutline]}
+              onPress={() => router.push('/(auth)/login')}
+            >
+              <Text style={[styles.authBannerBtnText, { color: '#fff' }]}>Se connecter</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      )}
+
       {/* Greeting with location */}
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
@@ -275,7 +331,7 @@ export default function DiscoverScreen() {
               backgroundColor: selectedCategory === cat.id ? theme.primary : theme.card,
               borderColor: selectedCategory === cat.id ? theme.primary : theme.border,
             }]}
-            onPress={() => setSelectedCategory(cat.id)}
+            onPress={() => { trackAction(); setSelectedCategory(cat.id); }}
           >
             <Text style={[typography.labelMedium, { color: selectedCategory === cat.id ? '#FFF' : theme.text }]}>
               {cat.name}
@@ -339,6 +395,44 @@ export default function DiscoverScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
         contentContainerStyle={{ paddingBottom: spacing.xxl }}
       />
+
+      {/* Auth Popup Modal */}
+      <Modal
+        visible={showAuthPopup}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAuthPopup(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setShowAuthPopup(false)}>
+          <Pressable style={[styles.modalContent, { backgroundColor: theme.card }]} onPress={() => {}}>
+            <TouchableOpacity style={styles.modalClose} onPress={() => setShowAuthPopup(false)}>
+              <Ionicons name="close" size={22} color={theme.textSecondary} />
+            </TouchableOpacity>
+
+            <Ionicons name="sparkles" size={40} color={theme.primary} style={{ marginBottom: 12 }} />
+            <Text style={[typography.h1, { color: theme.title, textAlign: 'center' }]}>
+              Rejoins la communauté
+            </Text>
+            <Text style={[typography.bodyMedium, { color: theme.text, textAlign: 'center', marginTop: 8, marginBottom: 24 }]}>
+              Crée ton compte pour contacter les créatifs et réserver des prestations
+            </Text>
+
+            <TouchableOpacity
+              style={[styles.modalPrimaryBtn, { backgroundColor: theme.primary }]}
+              onPress={() => { setShowAuthPopup(false); router.push('/(auth)/register'); }}
+            >
+              <Text style={styles.modalPrimaryBtnText}>Créer un compte</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.modalSecondaryBtn, { borderColor: theme.border }]}
+              onPress={() => { setShowAuthPopup(false); router.push('/(auth)/login'); }}
+            >
+              <Text style={[styles.modalSecondaryBtnText, { color: theme.title }]}>Se connecter</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -473,5 +567,90 @@ const styles = StyleSheet.create({
   locationLabel: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  // Auth banner
+  authBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: HORIZONTAL_PAD,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: radius.lg,
+  },
+  authBannerText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  authBannerButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  authBannerBtn: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: radius.full,
+  },
+  authBannerBtnOutline: {
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: '#fff',
+  },
+  authBannerBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#DC1B78',
+  },
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 340,
+    borderRadius: 20,
+    padding: 28,
+    alignItems: 'center',
+  },
+  modalClose: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalPrimaryBtn: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  modalPrimaryBtnText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  modalSecondaryBtn: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    borderWidth: 1.5,
+  },
+  modalSecondaryBtnText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
