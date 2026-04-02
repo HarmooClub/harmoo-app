@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../src/contexts/ThemeContext';
 import { servicesApi } from '../src/services/api';
 import { ScreenHeader } from '../src/components/ScreenHeader';
@@ -15,12 +15,28 @@ const CATEGORIES = Object.entries(CATEGORY_NAMES).map(([id, name]) => ({ id, nam
 export default function AddServiceScreen() {
   const { theme } = useTheme();
   const router = useRouter();
+  const params = useLocalSearchParams<{ editId?: string; editData?: string }>();
+  const isEdit = !!params.editId;
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [price, setPrice] = useState('');
   const [duration, setDuration] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (params.editData) {
+      try {
+        const data = JSON.parse(params.editData);
+        setTitle(data.title || '');
+        setDescription(data.description || '');
+        setCategory(data.category || '');
+        setPrice(data.price ? String(data.price) : '');
+        setDuration(data.duration_hours ? String(Math.round(data.duration_hours * 60)) : '');
+      } catch {}
+    }
+  }, []);
 
   const handleSubmit = async () => {
     if (!title.trim() || !description.trim() || !category || !price || !duration) {
@@ -29,14 +45,20 @@ export default function AddServiceScreen() {
     }
     setIsSubmitting(true);
     try {
-      await servicesApi.createService({
+      const payload = {
         title: title.trim(),
         description: description.trim(),
         category,
         price: parseFloat(price),
         duration_hours: parseFloat(duration) / 60,
-      });
-      Alert.alert('Succès', 'Service créé avec succès');
+      };
+      if (isEdit) {
+        await servicesApi.updateService(params.editId!, payload);
+        Alert.alert('Succès', 'Service modifié');
+      } else {
+        await servicesApi.createService(payload);
+        Alert.alert('Succès', 'Service créé avec succès');
+      }
       router.back();
     } catch (e: any) {
       const msg = e.response?.data?.detail || 'Erreur lors de la création';

@@ -66,6 +66,7 @@ export const portfolioApi = {
   getMyPortfolio: () => api.get('/portfolio'),
   createItem: (data: any) => api.post('/portfolio', data),
   addPortfolioItem: (data: any) => api.post('/portfolio', data),
+  updatePortfolioItem: (id: string, data: any) => api.put(`/portfolio/${id}`, data),
   deleteItem: (id: string) => api.delete(`/portfolio/${id}`),
   deletePortfolioItem: (id: string) => api.delete(`/portfolio/${id}`),
 };

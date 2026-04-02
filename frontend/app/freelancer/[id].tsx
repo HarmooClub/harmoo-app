@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, Dimensions, Animated, TextInput, Modal, Platform, Share } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, Dimensions, Animated, TextInput, Modal, Platform, Share, FlatList, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -306,19 +306,40 @@ export default function FreelancerDetailScreen() {
           <Card style={styles.section} padding={spacing.lg}>
             <Text style={[typography.h3, { color: theme.title, marginBottom: spacing.md }]}>Portfolio</Text>
             {freelancer.portfolio && freelancer.portfolio.length > 0 ? (
-              <View style={styles.portfolioGrid}>
-                {freelancer.portfolio.map((item: any, idx: number) => (
-                  <View key={item.id || idx} style={[styles.portfolioItem, { backgroundColor: theme.background }]}>
-                    {item.image && (
-                      <Image source={{ uri: item.image }} style={styles.portfolioImage} />
-                    )}
-                    <Text style={[typography.labelMedium, { color: theme.title, marginTop: spacing.sm }]}>{item.title}</Text>
-                    {item.description && (
-                      <Text style={[typography.caption, { color: theme.text, marginTop: spacing.xs }]} numberOfLines={2}>{item.description}</Text>
-                    )}
-                  </View>
-                ))}
-              </View>
+              <FlatList
+                data={freelancer.portfolio}
+                keyExtractor={(item: any, idx: number) => item.id || String(idx)}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingRight: spacing.md }}
+                renderItem={({ item }: { item: any }) => {
+                  const link = item.youtube_url || item.spotify_url || item.instagram_url || item.tiktok_url;
+                  const linkIcon = item.youtube_url ? 'logo-youtube' : item.spotify_url ? 'musical-notes' : item.instagram_url ? 'logo-instagram' : item.tiktok_url ? 'logo-tiktok' : null;
+                  return (
+                    <TouchableOpacity
+                      style={[styles.carouselItem, { backgroundColor: theme.background }]}
+                      activeOpacity={link ? 0.7 : 1}
+                      onPress={() => link && Linking.openURL(link)}
+                    >
+                      {item.image && (
+                        <Image source={{ uri: item.image }} style={styles.carouselImage} />
+                      )}
+                      <View style={styles.carouselInfo}>
+                        <Text style={[typography.labelMedium, { color: theme.title }]} numberOfLines={1}>{item.title}</Text>
+                        {item.description ? (
+                          <Text style={[typography.caption, { color: theme.text, marginTop: 2 }]} numberOfLines={2}>{item.description}</Text>
+                        ) : null}
+                        {link && (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                            <Ionicons name={linkIcon as any} size={14} color={theme.primary} />
+                            <Text style={[typography.caption, { color: theme.primary, marginLeft: 4 }]} numberOfLines={1}>Voir le projet</Text>
+                          </View>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                }}
+              />
             ) : (
               <View style={styles.emptyPortfolio}>
                 <Ionicons name="images-outline" size={40} color={theme.textSecondary} />
@@ -608,6 +629,21 @@ const styles = StyleSheet.create({
     height: 160,
     borderRadius: radius.sm,
     resizeMode: 'cover',
+  },
+  carouselItem: {
+    width: 180,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    marginRight: spacing.sm,
+  },
+  carouselImage: {
+    width: 180,
+    height: 120,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+  },
+  carouselInfo: {
+    padding: spacing.sm,
   },
   emptyPortfolio: {
     paddingVertical: spacing.xxxl,

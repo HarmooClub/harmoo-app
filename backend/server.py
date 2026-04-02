@@ -875,6 +875,22 @@ async def get_my_portfolio(current_user: dict = Depends(get_current_user)):
     portfolio = await db.portfolio.find({"user_id": current_user["id"]}).to_list(50)
     return [{k: v for k, v in p.items() if k != "_id"} for p in portfolio]
 
+@api_router.put("/portfolio/{item_id}")
+async def update_portfolio_item(item_id: str, item: PortfolioCreate, current_user: dict = Depends(get_current_user)):
+    item_data = item.dict()
+    if item_data.get("category") and not item_data.get("categories"):
+        item_data["categories"] = [item_data["category"]]
+    item_data.pop("category", None)
+    
+    result = await db.portfolio.update_one(
+        {"id": item_id, "user_id": current_user["id"]},
+        {"$set": item_data}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Projet non trouvé")
+    updated = await db.portfolio.find_one({"id": item_id})
+    return {k: v for k, v in updated.items() if k != "_id"}
+
 @api_router.delete("/portfolio/{item_id}")
 async def delete_portfolio_item(item_id: str, current_user: dict = Depends(get_current_user)):
     result = await db.portfolio.delete_one({"id": item_id, "user_id": current_user["id"]})

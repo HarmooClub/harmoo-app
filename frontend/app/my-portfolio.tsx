@@ -76,9 +76,14 @@ export default function MyPortfolioScreen() {
                 <Text style={[typography.tiny, { color: theme.textSecondary, marginTop: 2 }]}>{item.completion_date}</Text>
               )}
             </View>
-            <TouchableOpacity style={styles.itemDelete} onPress={() => handleDelete(item.id)}>
-              <Ionicons name="close" size={14} color="#FFF" />
-            </TouchableOpacity>
+            <View style={styles.itemActions}>
+              <TouchableOpacity style={styles.itemEdit} onPress={() => router.push({ pathname: '/add-portfolio', params: { editId: item.id, editData: JSON.stringify(item) } })}>
+                <Ionicons name="create" size={14} color="#FFF" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.itemDelete} onPress={() => handleDelete(item.id)}>
+                <Ionicons name="close" size={14} color="#FFF" />
+              </TouchableOpacity>
+            </View>
           </View>
         )}
         ListEmptyComponent={
@@ -109,7 +114,14 @@ const styles = StyleSheet.create({
   itemImagePlaceholder: { width: '100%', height: 130, alignItems: 'center', justifyContent: 'center' },
   itemContent: { padding: spacing.md },
   itemDelete: {
+    width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  itemActions: {
     position: 'absolute', top: spacing.sm, right: spacing.sm,
+    flexDirection: 'row', gap: 6,
+  },
+  itemEdit: {
     width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.4)',
     alignItems: 'center', justifyContent: 'center',
   },

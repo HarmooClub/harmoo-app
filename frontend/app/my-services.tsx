@@ -65,9 +65,14 @@ export default function MyServicesScreen() {
           <Card style={styles.card} padding={spacing.lg}>
             <View style={styles.cardHeader}>
               <Badge label={item.category || 'Service'} variant="primary" />
-              <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.deleteBtn}>
-                <Ionicons name="trash-outline" size={18} color={theme.error} />
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity onPress={() => router.push({ pathname: '/add-service', params: { editId: item.id, editData: JSON.stringify(item) } })}>
+                  <Ionicons name="create-outline" size={18} color={theme.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleDelete(item.id)}>
+                  <Ionicons name="trash-outline" size={18} color={theme.error} />
+                </TouchableOpacity>
+              </View>
             </View>
             <Text style={[typography.h4, { color: theme.title, marginTop: spacing.md }]}>{item.title}</Text>
             {item.description ? (

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../src/contexts/ThemeContext';
 import { useAuth } from '../src/contexts/AuthContext';
@@ -17,6 +17,8 @@ export default function AddPortfolioScreen() {
   const { theme } = useTheme();
   const { user } = useAuth();
   const router = useRouter();
+  const params = useLocalSearchParams<{ editId?: string; editData?: string }>();
+  const isEdit = !!params.editId;
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -27,6 +29,22 @@ export default function AddPortfolioScreen() {
   const [instagramUrl, setInstagramUrl] = useState('');
   const [tiktokUrl, setTiktokUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (params.editData) {
+      try {
+        const data = JSON.parse(params.editData);
+        setTitle(data.title || '');
+        setDescription(data.description || '');
+        setSelectedCategories(data.categories || (data.category ? [data.category] : []));
+        setImage(data.image || null);
+        setYoutubeUrl(data.youtube_url || '');
+        setSpotifyUrl(data.spotify_url || '');
+        setInstagramUrl(data.instagram_url || '');
+        setTiktokUrl(data.tiktok_url || '');
+      } catch {}
+    }
+  }, []);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -60,8 +78,13 @@ export default function AddPortfolioScreen() {
       if (instagramUrl.trim()) payload.instagram_url = instagramUrl.trim();
       if (tiktokUrl.trim()) payload.tiktok_url = tiktokUrl.trim();
 
-      await portfolioApi.addPortfolioItem(payload);
-      Alert.alert('Succès', 'Projet ajouté au portfolio');
+      if (isEdit) {
+        await portfolioApi.updatePortfolioItem(params.editId!, payload);
+        Alert.alert('Succès', 'Projet modifié');
+      } else {
+        await portfolioApi.addPortfolioItem(payload);
+        Alert.alert('Succès', 'Projet ajouté au portfolio');
+      }
       router.back();
     } catch (error: any) {
       Alert.alert('Erreur', error.response?.data?.detail || 'Impossible d\'ajouter le projet');
@@ -72,7 +95,7 @@ export default function AddPortfolioScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <ScreenHeader title="Ajouter un projet" />
+      <ScreenHeader title={isEdit ? "Modifier le projet" : "Ajouter un projet"} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
@@ -193,7 +216,7 @@ export default function AddPortfolioScreen() {
             </View>
           </View>
 
-          <Button title="Publier le projet" onPress={handleSubmit} isLoading={isLoading} style={{ marginTop: spacing.xl }} />
+          <Button title={isEdit ? "Enregistrer" : "Publier le projet"} onPress={handleSubmit} isLoading={isLoading} style={{ marginTop: spacing.xl }} />
           <View style={{ height: spacing.xxxl }} />
         </ScrollView>
       </KeyboardAvoidingView>
