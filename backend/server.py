@@ -1680,7 +1680,7 @@ async def stripe_subscription_webhook(request: Request):
 # ==================== HARMOO CLUB ENDPOINTS ====================
 
 CLUB_PRICE = 30  # €
-CLUB_MAX_MEMBERS = 50
+CLUB_MAX_MEMBERS = 10
 
 @api_router.get("/club/count")
 async def get_club_count():

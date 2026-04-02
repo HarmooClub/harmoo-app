@@ -74,7 +74,7 @@ const PLANS = [
 ];
 
 const CLUB_PRICE = 30;
-const CLUB_MAX_MEMBERS = 50;
+const CLUB_MAX_MEMBERS = 10;
 
 export default function MembershipScreen() {
   const { theme } = useTheme();
@@ -166,7 +166,7 @@ export default function MembershipScreen() {
           </View>
 
           <Text style={[typography.bodySmall, { color: theme.text, marginBottom: spacing.md }]}>
-            Rejoignez les 50 premiers membres fondateurs et bénéficiez d'avantages exclusifs à vie.
+            Rejoignez les 10 premiers membres fondateurs et bénéficiez d'avantages exclusifs à vie.
           </Text>
 
           <View style={styles.clubFeatures}>
