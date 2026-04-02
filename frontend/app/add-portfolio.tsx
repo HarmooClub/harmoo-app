@@ -28,6 +28,7 @@ export default function AddPortfolioScreen() {
   const [spotifyUrl, setSpotifyUrl] = useState('');
   const [instagramUrl, setInstagramUrl] = useState('');
   const [tiktokUrl, setTiktokUrl] = useState('');
+  const [externalUrl, setExternalUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -42,6 +43,7 @@ export default function AddPortfolioScreen() {
         setSpotifyUrl(data.spotify_url || '');
         setInstagramUrl(data.instagram_url || '');
         setTiktokUrl(data.tiktok_url || '');
+        setExternalUrl(data.external_url || '');
       } catch {}
     }
   }, []);
@@ -77,6 +79,7 @@ export default function AddPortfolioScreen() {
       if (spotifyUrl.trim()) payload.spotify_url = spotifyUrl.trim();
       if (instagramUrl.trim()) payload.instagram_url = instagramUrl.trim();
       if (tiktokUrl.trim()) payload.tiktok_url = tiktokUrl.trim();
+      if (externalUrl.trim()) payload.external_url = externalUrl.trim();
 
       if (isEdit) {
         await portfolioApi.updatePortfolioItem(params.editId!, payload);
@@ -210,6 +213,21 @@ export default function AddPortfolioScreen() {
                 placeholderTextColor={theme.textSecondary}
                 value={tiktokUrl}
                 onChangeText={setTiktokUrl}
+                keyboardType="url"
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.linkRow}>
+              <View style={[styles.linkIcon, { backgroundColor: '#4A90D915' }]}>
+                <Ionicons name="link-outline" size={20} color="#4A90D9" />
+              </View>
+              <TextInput
+                style={[styles.linkInput, { backgroundColor: theme.card, color: theme.title, borderColor: theme.border }]}
+                placeholder="Lien externe (site web, Behance...)"
+                placeholderTextColor={theme.textSecondary}
+                value={externalUrl}
+                onChangeText={setExternalUrl}
                 keyboardType="url"
                 autoCapitalize="none"
               />

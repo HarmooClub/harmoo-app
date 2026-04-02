@@ -313,8 +313,8 @@ export default function FreelancerDetailScreen() {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{ paddingRight: spacing.md }}
                 renderItem={({ item }: { item: any }) => {
-                  const link = item.youtube_url || item.spotify_url || item.instagram_url || item.tiktok_url;
-                  const linkIcon = item.youtube_url ? 'logo-youtube' : item.spotify_url ? 'musical-notes' : item.instagram_url ? 'logo-instagram' : item.tiktok_url ? 'logo-tiktok' : null;
+                  const link = item.youtube_url || item.spotify_url || item.instagram_url || item.tiktok_url || item.external_url;
+                  const linkIcon = item.youtube_url ? 'logo-youtube' : item.spotify_url ? 'musical-notes' : item.instagram_url ? 'logo-instagram' : item.tiktok_url ? 'logo-tiktok' : item.external_url ? 'link-outline' : null;
                   return (
                     <TouchableOpacity
                       style={[styles.carouselItem, { backgroundColor: theme.background }]}

@@ -265,6 +265,7 @@ class PortfolioItem(BaseModel):
     spotify_url: Optional[str] = None
     instagram_url: Optional[str] = None
     tiktok_url: Optional[str] = None
+    external_url: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class PortfolioCreate(BaseModel):
@@ -279,6 +280,7 @@ class PortfolioCreate(BaseModel):
     spotify_url: Optional[str] = None
     instagram_url: Optional[str] = None
     tiktok_url: Optional[str] = None
+    external_url: Optional[str] = None
 
 class Service(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
