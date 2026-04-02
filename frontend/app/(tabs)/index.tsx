@@ -288,6 +288,11 @@ export default function DiscoverScreen() {
         </TouchableOpacity>
       )}
 
+      {/* Logo */}
+      <View style={styles.logoHeader}>
+        <Image source={require('../../assets/images/HarmooLogo.png')} style={styles.headerLogo} resizeMode="contain" />
+      </View>
+
       {/* Greeting with location */}
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
@@ -432,6 +437,15 @@ export default function DiscoverScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  logoHeader: {
+    alignItems: 'flex-start',
+    paddingHorizontal: HORIZONTAL_PAD,
+    paddingTop: spacing.xs,
+  },
+  headerLogo: {
+    width: 110,
+    height: 32,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
