@@ -12,7 +12,7 @@ import { spacing, typography, radius } from '../../src/theme';
 
 // Total steps: 1 (info) + 2 (password) + [3 (category) + 4 (profession)] for freelancers
 const TOTAL_STEPS_CLIENT = 2;
-const TOTAL_STEPS_FREELANCER = 4;
+const TOTAL_STEPS_FREELANCER = 6;
 
 export default function RegisterScreen() {
   const { theme } = useTheme();
@@ -27,6 +27,8 @@ export default function RegisterScreen() {
   const [userType, setUserType] = useState<'client' | 'freelancer'>('client');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedProfession, setSelectedProfession] = useState<string | null>(null);
+  const [secondaryCategory, setSecondaryCategory] = useState<string | null>(null);
+  const [secondaryProfession, setSecondaryProfession] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -72,6 +74,13 @@ export default function RegisterScreen() {
     } else if (step === 4) {
       setStep(3);
       setSelectedProfession(null);
+    } else if (step === 5) {
+      setStep(4);
+      setSecondaryCategory(null);
+      setSecondaryProfession(null);
+    } else if (step === 6) {
+      setStep(5);
+      setSecondaryProfession(null);
     }
   };
 
@@ -83,7 +92,18 @@ export default function RegisterScreen() {
 
   const handleProfessionSelect = (profession: string) => {
     setSelectedProfession(profession);
-    setStep(2); // Go to password step
+    // Don't auto-advance — user can choose secondary or go to password
+  };
+
+  const handleSecondaryCategorySelect = (catId: string) => {
+    setSecondaryCategory(catId);
+    setSecondaryProfession(null);
+    setStep(6);
+  };
+
+  const handleSecondaryProfessionSelect = (profession: string) => {
+    setSecondaryProfession(profession);
+    setStep(2); // Go to password
   };
 
   const handleRegister = async () => {
@@ -92,6 +112,8 @@ export default function RegisterScreen() {
     try {
       const categories = selectedCategory ? [selectedCategory] : [];
       const subcategories = selectedProfession ? [selectedProfession] : [];
+      if (secondaryCategory) categories.push(secondaryCategory);
+      if (secondaryProfession) subcategories.push(secondaryProfession);
       await register(email, password, fullName, userType, categories, subcategories);
       setTimeout(() => {
         router.replace('/(tabs)');
@@ -106,8 +128,10 @@ export default function RegisterScreen() {
     switch (step) {
       case 1: return 'Créez votre compte';
       case 2: return 'Sécurisez votre compte';
-      case 3: return 'Choisissez votre catégorie';
-      case 4: return 'Choisissez votre profession';
+      case 3: return 'Domaine principal';
+      case 4: return 'Profession principale';
+      case 5: return 'Domaine secondaire';
+      case 6: return 'Profession secondaire';
       default: return '';
     }
   };
@@ -118,6 +142,8 @@ export default function RegisterScreen() {
       case 2: return 'Choisissez un mot de passe';
       case 3: return 'Dans quel domaine exercez-vous ?';
       case 4: return selectedCategory ? `Professions en ${CATEGORY_NAMES[selectedCategory]}` : 'Sélectionnez votre métier';
+      case 5: return 'Un autre domaine ? (optionnel)';
+      case 6: return secondaryCategory ? `Professions en ${CATEGORY_NAMES[secondaryCategory]}` : '';
       default: return '';
     }
   };
@@ -126,11 +152,13 @@ export default function RegisterScreen() {
   const stepIndicatorCount = totalSteps;
   const currentStepIndex = () => {
     if (userType === 'client') return step;
-    // Freelancer: 1 -> 3 -> 4 -> 2
+    // Freelancer: 1 -> 3 -> 4 -> 5 -> 6 -> 2
     if (step === 1) return 1;
     if (step === 3) return 2;
     if (step === 4) return 3;
-    if (step === 2) return 4;
+    if (step === 5) return 4;
+    if (step === 6) return 5;
+    if (step === 2) return 6;
     return step;
   };
 
@@ -200,17 +228,79 @@ export default function RegisterScreen() {
               onPress={() => handleProfessionSelect(profession)}
               activeOpacity={0.7}
             >
-              <Text
-                style={[
-                  typography.bodyMedium,
-                  { color: isSelected ? theme.primary : theme.title, fontWeight: isSelected ? '600' : '400' },
-                ]}
-              >
+              <Text style={[typography.bodyMedium, { color: isSelected ? theme.primary : theme.title, fontWeight: isSelected ? '600' : '400' }]}>
                 {displayName}
               </Text>
-              {isSelected && (
-                <Ionicons name="checkmark-circle" size={22} color={theme.primary} />
-              )}
+              {isSelected && <Ionicons name="checkmark-circle" size={22} color={theme.primary} />}
+            </TouchableOpacity>
+          );
+        })}
+        {selectedProfession && (
+          <View style={{ marginTop: spacing.lg }}>
+            <TouchableOpacity onPress={() => setStep(5)} style={{ alignItems: 'center', marginBottom: spacing.md }}>
+              <Text style={[typography.bodySmall, { color: theme.primary }]}>+ Ajouter un domaine secondaire (optionnel)</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.primaryBtn, { backgroundColor: theme.primary }]}
+              onPress={() => setStep(2)}
+            >
+              <Text style={[typography.labelLarge, { color: '#FFF' }]}>Suivant</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const renderSecondaryCategorySelection = () => {
+    const categoryEntries = Object.entries(CATEGORY_NAMES).filter(([catId]) => catId !== selectedCategory);
+    return (
+      <View>
+        <View style={styles.categoryGrid}>
+          {categoryEntries.map(([catId, catName]) => {
+            const iconName = CATEGORY_ICONS[catId] || 'grid';
+            const isSelected = secondaryCategory === catId;
+            return (
+              <TouchableOpacity
+                key={catId}
+                style={[styles.categoryCard, { backgroundColor: isSelected ? theme.primary : theme.card, borderColor: isSelected ? theme.primary : theme.border }]}
+                onPress={() => handleSecondaryCategorySelect(catId)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name={iconName as any} size={28} color={isSelected ? '#FFF' : theme.primary} />
+                <Text style={[typography.labelMedium, { color: isSelected ? '#FFF' : theme.title, marginTop: spacing.sm, textAlign: 'center' }]} numberOfLines={2}>
+                  {catName}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+        <TouchableOpacity onPress={() => setStep(2)} style={{ alignItems: 'center', marginTop: spacing.lg }}>
+          <Text style={[typography.bodySmall, { color: theme.textSecondary }]}>Passer cette étape</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  const renderSecondaryProfessionSelection = () => {
+    if (!secondaryCategory) return null;
+    const professions = CATEGORY_SUBCATEGORIES[secondaryCategory] || [];
+    return (
+      <View style={styles.professionList}>
+        {professions.map((profession) => {
+          const isSelected = secondaryProfession === profession;
+          const displayName = profession.charAt(0).toUpperCase() + profession.slice(1);
+          return (
+            <TouchableOpacity
+              key={profession}
+              style={[styles.professionItem, { backgroundColor: isSelected ? theme.primarySoft : theme.card, borderColor: isSelected ? theme.primary : theme.border }]}
+              onPress={() => handleSecondaryProfessionSelect(profession)}
+              activeOpacity={0.7}
+            >
+              <Text style={[typography.bodyMedium, { color: isSelected ? theme.primary : theme.title, fontWeight: isSelected ? '600' : '400' }]}>
+                {displayName}
+              </Text>
+              {isSelected && <Ionicons name="checkmark-circle" size={22} color={theme.primary} />}
             </TouchableOpacity>
           );
         })}
@@ -345,6 +435,32 @@ export default function RegisterScreen() {
             </View>
           )}
 
+          {/* Step 5: Secondary Category (Freelancer only) */}
+          {step === 5 && (
+            <View>
+              <Text style={[typography.h3, { color: theme.title, marginBottom: spacing.lg }]}>
+                Un autre domaine ?
+              </Text>
+              {renderSecondaryCategorySelection()}
+            </View>
+          )}
+
+          {/* Step 6: Secondary Profession (Freelancer only) */}
+          {step === 6 && (
+            <View>
+              <View style={[styles.selectedCategoryBadge, { backgroundColor: theme.primarySoft }]}>
+                <Ionicons name={(CATEGORY_ICONS[secondaryCategory || ''] || 'grid') as any} size={18} color={theme.primary} />
+                <Text style={[typography.labelMedium, { color: theme.primary }]}>
+                  {secondaryCategory ? CATEGORY_NAMES[secondaryCategory] : ''}
+                </Text>
+              </View>
+              <Text style={[typography.h3, { color: theme.title, marginBottom: spacing.lg, marginTop: spacing.md }]}>
+                Profession secondaire
+              </Text>
+              {renderSecondaryProfessionSelection()}
+            </View>
+          )}
+
           <View style={styles.footer}>
             <Text style={[typography.bodySmall, { color: theme.text }]}>Déjà un compte ?</Text>
             <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
@@ -412,4 +528,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: spacing.xxl },
+  primaryBtn: {
+    paddingVertical: 14,
+    borderRadius: radius.full,
+    alignItems: 'center',
+  },
 });

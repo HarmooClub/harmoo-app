@@ -19,31 +19,27 @@ export default function PersonalInfoScreen() {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showOrganizationModal, setShowOrganizationModal] = useState(false);
   const [organizationInput, setOrganizationInput] = useState(user?.organization || '');
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedProfession, setSelectedProfession] = useState<string | null>(null);
+  const [secondaryCategory, setSecondaryCategory] = useState<string | null>(null);
+  const [secondaryProfession, setSecondaryProfession] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const isFreelancer = user?.is_provider_mode || user?.user_type === 'freelancer';
 
   const openCategoryModal = () => {
-    // Pre-select current values if they exist
-    if (user?.categories?.length) {
-      setSelectedCategory(user.categories[0]);
-    }
-    if (user?.subcategories?.length) {
-      setSelectedProfession(user.subcategories[0]);
-    }
+    if (user?.categories?.length) setSelectedCategory(user.categories[0]);
+    if (user?.subcategories?.length) setSelectedProfession(user.subcategories[0]);
+    if (user?.categories?.length > 1) setSecondaryCategory(user.categories[1]);
+    if (user?.subcategories?.length > 1) setSecondaryProfession(user.subcategories[1]);
     setStep(1);
     setShowCategoryModal(true);
   };
 
   const handleCategorySelect = (catId: string) => {
     setSelectedCategory(catId);
-    // Reset profession if category changed
-    if (catId !== user?.categories?.[0]) {
-      setSelectedProfession(null);
-    }
+    if (catId !== user?.categories?.[0]) setSelectedProfession(null);
     setStep(2);
   };
 
@@ -51,18 +47,16 @@ export default function PersonalInfoScreen() {
     if (!selectedCategory || !selectedProfession) return;
     setIsLoading(true);
     try {
-      await updateUser({
-        categories: [selectedCategory],
-        subcategories: [selectedProfession],
-      });
+      const categories = [selectedCategory];
+      const subcategories = [selectedProfession];
+      if (secondaryCategory) categories.push(secondaryCategory);
+      if (secondaryProfession) subcategories.push(secondaryProfession);
+      await updateUser({ categories, subcategories });
       setShowCategoryModal(false);
-      if (Platform.OS === 'web') {
-        window.alert('Catégorie mise à jour !');
-      } else {
-        Alert.alert('Succès', 'Votre catégorie a été mise à jour.');
-      }
+      if (Platform.OS === 'web') window.alert('Catégories mises à jour !');
+      else Alert.alert('Succès', 'Vos catégories ont été mises à jour.');
     } catch {
-      Alert.alert('Erreur', 'Impossible de mettre à jour la catégorie');
+      Alert.alert('Erreur', 'Impossible de mettre à jour');
     } finally {
       setIsLoading(false);
     }
@@ -71,8 +65,6 @@ export default function PersonalInfoScreen() {
   const closeModal = () => {
     setShowCategoryModal(false);
     setStep(1);
-    setSelectedCategory(null);
-    setSelectedProfession(null);
   };
 
   const handleSaveOrganization = async () => {
@@ -109,10 +101,13 @@ export default function PersonalInfoScreen() {
     </TouchableOpacity>
   );
 
-  // Get display names for current category/profession
   const currentCategoryName = user?.categories?.length ? CATEGORY_NAMES[user.categories[0]] || user.categories[0] : '';
   const currentProfessionName = user?.subcategories?.length 
     ? user.subcategories[0].charAt(0).toUpperCase() + user.subcategories[0].slice(1) 
+    : '';
+  const secondaryCategoryName = user?.categories?.length > 1 ? CATEGORY_NAMES[user.categories[1]] || user.categories[1] : '';
+  const secondaryProfessionName = user?.subcategories?.length > 1
+    ? user.subcategories[1].charAt(0).toUpperCase() + user.subcategories[1].slice(1)
     : '';
 
   return (
@@ -149,11 +144,34 @@ export default function PersonalInfoScreen() {
               editable
             />
             <InfoRow 
-              label="Profession" 
+              label="Profession principale" 
               value={currentProfessionName} 
               onPress={openCategoryModal}
               editable
             />
+            {secondaryCategoryName ? (
+              <>
+                <InfoRow 
+                  label="Catégorie secondaire" 
+                  value={secondaryCategoryName} 
+                  onPress={openCategoryModal}
+                  editable
+                />
+                <InfoRow 
+                  label="Profession secondaire" 
+                  value={secondaryProfessionName} 
+                  onPress={openCategoryModal}
+                  editable
+                />
+              </>
+            ) : (
+              <TouchableOpacity 
+                style={{ padding: spacing.lg, alignItems: 'center' }} 
+                onPress={openCategoryModal}
+              >
+                <Text style={[typography.bodySmall, { color: theme.primary }]}>+ Ajouter une catégorie secondaire</Text>
+              </TouchableOpacity>
+            )}
           </Card>
         )}
       </ScrollView>
@@ -184,65 +202,64 @@ export default function PersonalInfoScreen() {
                   
                   {/* Header */}
                   <View style={styles.modalHeader}>
-                    {step === 2 && (
-                      <TouchableOpacity onPress={() => setStep(1)} style={styles.modalBackBtn}>
+                    {step > 1 && (
+                      <TouchableOpacity onPress={() => setStep(step === 4 ? 3 : step === 3 ? 2 : 1)} style={styles.modalBackBtn}>
                         <Ionicons name="chevron-back" size={24} color={theme.title} />
                       </TouchableOpacity>
                     )}
                     <Text style={[typography.h2, { color: theme.title, flex: 1 }]}>
-                      {step === 1 ? 'Choisir une catégorie' : 'Choisir une profession'}
+                      {step === 1 ? 'Catégorie principale' : step === 2 ? 'Profession principale' : step === 3 ? 'Catégorie secondaire' : 'Profession secondaire'}
                     </Text>
                   </View>
 
                   <ScrollView style={styles.modalScrollView} showsVerticalScrollIndicator={false}>
-                    {/* Step 1: Categories */}
                     {step === 1 && (
                       <View style={styles.grid}>
                         {Object.entries(CATEGORY_NAMES).map(([catId, catName]) => {
                           const isSelected = selectedCategory === catId;
                           return (
-                            <TouchableOpacity
-                              key={catId}
-                              style={[styles.categoryCard, {
-                                backgroundColor: isSelected ? theme.primarySoft : theme.card,
-                                borderColor: isSelected ? theme.primary : theme.border,
-                              }]}
-                              onPress={() => handleCategorySelect(catId)}
-                              activeOpacity={0.7}
-                            >
+                            <TouchableOpacity key={catId} style={[styles.categoryCard, { backgroundColor: isSelected ? theme.primarySoft : theme.card, borderColor: isSelected ? theme.primary : theme.border }]} onPress={() => handleCategorySelect(catId)} activeOpacity={0.7}>
                               <Ionicons name={(CATEGORY_ICONS[catId] || 'grid') as any} size={24} color={isSelected ? theme.primary : theme.textSecondary} />
-                              <Text style={[typography.labelSmall, { color: isSelected ? theme.primary : theme.title, marginTop: spacing.xs, textAlign: 'center' }]} numberOfLines={2}>
-                                {catName}
-                              </Text>
+                              <Text style={[typography.labelSmall, { color: isSelected ? theme.primary : theme.title, marginTop: spacing.xs, textAlign: 'center' }]} numberOfLines={2}>{catName}</Text>
                             </TouchableOpacity>
                           );
                         })}
                       </View>
                     )}
-
-                    {/* Step 2: Professions */}
                     {step === 2 && selectedCategory && (
                       <View style={styles.professionList}>
-                        {(CATEGORY_SUBCATEGORIES[selectedCategory] || []).map((profession) => {
-                          const isSelected = selectedProfession === profession;
-                          const display = profession.charAt(0).toUpperCase() + profession.slice(1);
+                        {(CATEGORY_SUBCATEGORIES[selectedCategory] || []).map((p) => {
+                          const isSel = selectedProfession === p;
                           return (
-                            <TouchableOpacity
-                              key={profession}
-                              style={[styles.professionItem, {
-                                backgroundColor: isSelected ? theme.primarySoft : theme.card,
-                                borderColor: isSelected ? theme.primary : theme.border,
-                              }]}
-                              onPress={() => setSelectedProfession(profession)}
-                              activeOpacity={0.7}
-                            >
-                              <Text style={[typography.bodyMedium, {
-                                color: isSelected ? theme.primary : theme.title,
-                                fontWeight: isSelected ? '600' : '400',
-                              }]}>
-                                {display}
-                              </Text>
-                              {isSelected && <Ionicons name="checkmark-circle" size={22} color={theme.primary} />}
+                            <TouchableOpacity key={p} style={[styles.professionItem, { backgroundColor: isSel ? theme.primarySoft : theme.card, borderColor: isSel ? theme.primary : theme.border }]} onPress={() => setSelectedProfession(p)} activeOpacity={0.7}>
+                              <Text style={[typography.bodyMedium, { color: isSel ? theme.primary : theme.title, fontWeight: isSel ? '600' : '400' }]}>{p.charAt(0).toUpperCase() + p.slice(1)}</Text>
+                              {isSel && <Ionicons name="checkmark-circle" size={22} color={theme.primary} />}
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    )}
+                    {step === 3 && (
+                      <View style={styles.grid}>
+                        {Object.entries(CATEGORY_NAMES).filter(([c]) => c !== selectedCategory).map(([catId, catName]) => {
+                          const isSelected = secondaryCategory === catId;
+                          return (
+                            <TouchableOpacity key={catId} style={[styles.categoryCard, { backgroundColor: isSelected ? theme.primarySoft : theme.card, borderColor: isSelected ? theme.primary : theme.border }]} onPress={() => { setSecondaryCategory(catId); setSecondaryProfession(null); setStep(4); }} activeOpacity={0.7}>
+                              <Ionicons name={(CATEGORY_ICONS[catId] || 'grid') as any} size={24} color={isSelected ? theme.primary : theme.textSecondary} />
+                              <Text style={[typography.labelSmall, { color: isSelected ? theme.primary : theme.title, marginTop: spacing.xs, textAlign: 'center' }]} numberOfLines={2}>{catName}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    )}
+                    {step === 4 && secondaryCategory && (
+                      <View style={styles.professionList}>
+                        {(CATEGORY_SUBCATEGORIES[secondaryCategory] || []).map((p) => {
+                          const isSel = secondaryProfession === p;
+                          return (
+                            <TouchableOpacity key={p} style={[styles.professionItem, { backgroundColor: isSel ? theme.primarySoft : theme.card, borderColor: isSel ? theme.primary : theme.border }]} onPress={() => setSecondaryProfession(p)} activeOpacity={0.7}>
+                              <Text style={[typography.bodyMedium, { color: isSel ? theme.primary : theme.title, fontWeight: isSel ? '600' : '400' }]}>{p.charAt(0).toUpperCase() + p.slice(1)}</Text>
+                              {isSel && <Ionicons name="checkmark-circle" size={22} color={theme.primary} />}
                             </TouchableOpacity>
                           );
                         })}
@@ -250,14 +267,17 @@ export default function PersonalInfoScreen() {
                     )}
                   </ScrollView>
 
-                  {/* Confirm Button */}
                   {step === 2 && selectedProfession && (
                     <View style={styles.confirmBtnContainer}>
-                      <Button
-                        title="Confirmer"
-                        onPress={handleConfirm}
-                        isLoading={isLoading}
-                      />
+                      <TouchableOpacity onPress={() => setStep(3)} style={{ alignItems: 'center', marginBottom: spacing.md }}>
+                        <Text style={[typography.bodySmall, { color: theme.primary }]}>+ Ajouter un domaine secondaire</Text>
+                      </TouchableOpacity>
+                      <Button title="Confirmer" onPress={handleConfirm} isLoading={isLoading} />
+                    </View>
+                  )}
+                  {step === 4 && secondaryProfession && (
+                    <View style={styles.confirmBtnContainer}>
+                      <Button title="Confirmer" onPress={handleConfirm} isLoading={isLoading} />
                     </View>
                   )}
                 </View>
@@ -269,65 +289,64 @@ export default function PersonalInfoScreen() {
                   
                   {/* Header */}
                   <View style={styles.modalHeader}>
-                    {step === 2 && (
-                      <TouchableOpacity onPress={() => setStep(1)} style={styles.modalBackBtn}>
+                    {step > 1 && (
+                      <TouchableOpacity onPress={() => setStep(step === 4 ? 3 : step === 3 ? 2 : 1)} style={styles.modalBackBtn}>
                         <Ionicons name="chevron-back" size={24} color={theme.title} />
                       </TouchableOpacity>
                     )}
                     <Text style={[typography.h2, { color: theme.title, flex: 1 }]}>
-                      {step === 1 ? 'Choisir une catégorie' : 'Choisir une profession'}
+                      {step === 1 ? 'Catégorie principale' : step === 2 ? 'Profession principale' : step === 3 ? 'Catégorie secondaire' : 'Profession secondaire'}
                     </Text>
                   </View>
 
                   <ScrollView style={styles.modalScrollView} showsVerticalScrollIndicator={false}>
-                    {/* Step 1: Categories */}
                     {step === 1 && (
                       <View style={styles.grid}>
                         {Object.entries(CATEGORY_NAMES).map(([catId, catName]) => {
                           const isSelected = selectedCategory === catId;
                           return (
-                            <TouchableOpacity
-                              key={catId}
-                              style={[styles.categoryCard, {
-                                backgroundColor: isSelected ? theme.primarySoft : theme.card,
-                                borderColor: isSelected ? theme.primary : theme.border,
-                              }]}
-                              onPress={() => handleCategorySelect(catId)}
-                              activeOpacity={0.7}
-                            >
+                            <TouchableOpacity key={catId} style={[styles.categoryCard, { backgroundColor: isSelected ? theme.primarySoft : theme.card, borderColor: isSelected ? theme.primary : theme.border }]} onPress={() => handleCategorySelect(catId)} activeOpacity={0.7}>
                               <Ionicons name={(CATEGORY_ICONS[catId] || 'grid') as any} size={24} color={isSelected ? theme.primary : theme.textSecondary} />
-                              <Text style={[typography.labelSmall, { color: isSelected ? theme.primary : theme.title, marginTop: spacing.xs, textAlign: 'center' }]} numberOfLines={2}>
-                                {catName}
-                              </Text>
+                              <Text style={[typography.labelSmall, { color: isSelected ? theme.primary : theme.title, marginTop: spacing.xs, textAlign: 'center' }]} numberOfLines={2}>{catName}</Text>
                             </TouchableOpacity>
                           );
                         })}
                       </View>
                     )}
-
-                    {/* Step 2: Professions */}
                     {step === 2 && selectedCategory && (
                       <View style={styles.professionList}>
-                        {(CATEGORY_SUBCATEGORIES[selectedCategory] || []).map((profession) => {
-                          const isSelected = selectedProfession === profession;
-                          const display = profession.charAt(0).toUpperCase() + profession.slice(1);
+                        {(CATEGORY_SUBCATEGORIES[selectedCategory] || []).map((p) => {
+                          const isSel = selectedProfession === p;
                           return (
-                            <TouchableOpacity
-                              key={profession}
-                              style={[styles.professionItem, {
-                                backgroundColor: isSelected ? theme.primarySoft : theme.card,
-                                borderColor: isSelected ? theme.primary : theme.border,
-                              }]}
-                              onPress={() => setSelectedProfession(profession)}
-                              activeOpacity={0.7}
-                            >
-                              <Text style={[typography.bodyMedium, {
-                                color: isSelected ? theme.primary : theme.title,
-                                fontWeight: isSelected ? '600' : '400',
-                              }]}>
-                                {display}
-                              </Text>
-                              {isSelected && <Ionicons name="checkmark-circle" size={22} color={theme.primary} />}
+                            <TouchableOpacity key={p} style={[styles.professionItem, { backgroundColor: isSel ? theme.primarySoft : theme.card, borderColor: isSel ? theme.primary : theme.border }]} onPress={() => setSelectedProfession(p)} activeOpacity={0.7}>
+                              <Text style={[typography.bodyMedium, { color: isSel ? theme.primary : theme.title, fontWeight: isSel ? '600' : '400' }]}>{p.charAt(0).toUpperCase() + p.slice(1)}</Text>
+                              {isSel && <Ionicons name="checkmark-circle" size={22} color={theme.primary} />}
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    )}
+                    {step === 3 && (
+                      <View style={styles.grid}>
+                        {Object.entries(CATEGORY_NAMES).filter(([c]) => c !== selectedCategory).map(([catId, catName]) => {
+                          const isSelected = secondaryCategory === catId;
+                          return (
+                            <TouchableOpacity key={catId} style={[styles.categoryCard, { backgroundColor: isSelected ? theme.primarySoft : theme.card, borderColor: isSelected ? theme.primary : theme.border }]} onPress={() => { setSecondaryCategory(catId); setSecondaryProfession(null); setStep(4); }} activeOpacity={0.7}>
+                              <Ionicons name={(CATEGORY_ICONS[catId] || 'grid') as any} size={24} color={isSelected ? theme.primary : theme.textSecondary} />
+                              <Text style={[typography.labelSmall, { color: isSelected ? theme.primary : theme.title, marginTop: spacing.xs, textAlign: 'center' }]} numberOfLines={2}>{catName}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    )}
+                    {step === 4 && secondaryCategory && (
+                      <View style={styles.professionList}>
+                        {(CATEGORY_SUBCATEGORIES[secondaryCategory] || []).map((p) => {
+                          const isSel = secondaryProfession === p;
+                          return (
+                            <TouchableOpacity key={p} style={[styles.professionItem, { backgroundColor: isSel ? theme.primarySoft : theme.card, borderColor: isSel ? theme.primary : theme.border }]} onPress={() => setSecondaryProfession(p)} activeOpacity={0.7}>
+                              <Text style={[typography.bodyMedium, { color: isSel ? theme.primary : theme.title, fontWeight: isSel ? '600' : '400' }]}>{p.charAt(0).toUpperCase() + p.slice(1)}</Text>
+                              {isSel && <Ionicons name="checkmark-circle" size={22} color={theme.primary} />}
                             </TouchableOpacity>
                           );
                         })}
@@ -335,14 +354,17 @@ export default function PersonalInfoScreen() {
                     )}
                   </ScrollView>
 
-                  {/* Confirm Button */}
                   {step === 2 && selectedProfession && (
                     <View style={styles.confirmBtnContainer}>
-                      <Button
-                        title="Confirmer"
-                        onPress={handleConfirm}
-                        isLoading={isLoading}
-                      />
+                      <TouchableOpacity onPress={() => setStep(3)} style={{ alignItems: 'center', marginBottom: spacing.md }}>
+                        <Text style={[typography.bodySmall, { color: theme.primary }]}>+ Ajouter un domaine secondaire</Text>
+                      </TouchableOpacity>
+                      <Button title="Confirmer" onPress={handleConfirm} isLoading={isLoading} />
+                    </View>
+                  )}
+                  {step === 4 && secondaryProfession && (
+                    <View style={styles.confirmBtnContainer}>
+                      <Button title="Confirmer" onPress={handleConfirm} isLoading={isLoading} />
                     </View>
                   )}
                 </View>
