@@ -154,20 +154,20 @@ export default function PersonalInfoScreen() {
                 <InfoRow 
                   label="Catégorie secondaire" 
                   value={secondaryCategoryName} 
-                  onPress={openCategoryModal}
+                  onPress={() => { openCategoryModal(); setTimeout(() => setStep(3), 50); }}
                   editable
                 />
                 <InfoRow 
                   label="Profession secondaire" 
                   value={secondaryProfessionName} 
-                  onPress={openCategoryModal}
+                  onPress={() => { openCategoryModal(); setTimeout(() => setStep(3), 50); }}
                   editable
                 />
               </>
             ) : (
               <TouchableOpacity 
                 style={{ padding: spacing.lg, alignItems: 'center' }} 
-                onPress={openCategoryModal}
+                onPress={() => { openCategoryModal(); setTimeout(() => setStep(3), 50); }}
               >
                 <Text style={[typography.bodySmall, { color: theme.primary }]}>+ Ajouter une catégorie secondaire</Text>
               </TouchableOpacity>
