@@ -288,11 +288,6 @@ export default function DiscoverScreen() {
         </TouchableOpacity>
       )}
 
-      {/* Logo */}
-      <View style={styles.logoHeader}>
-        <Image source={require('../../assets/images/HarmooLogo.png')} style={styles.headerLogo} resizeMode="contain" />
-      </View>
-
       {/* Greeting with location */}
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
