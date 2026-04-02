@@ -380,7 +380,8 @@ export default function FreelancerDetailScreen() {
         </View>
       </Animated.ScrollView>
 
-      {/* Fixed Bottom Bar — "Réserver" button always visible */}
+      {/* Fixed Bottom Bar — hide for own profile */}
+      {user?.id !== freelancer?.id && (
       <View style={[styles.bottomBar, { backgroundColor: theme.card, borderTopColor: theme.divider }]}>
         <TouchableOpacity style={[styles.messageBtn, { borderColor: theme.primary }]} onPress={startConversation}>
           <Ionicons name="chatbubble-outline" size={18} color={theme.primary} />
@@ -399,6 +400,7 @@ export default function FreelancerDetailScreen() {
           <Text style={[typography.labelLarge, { color: '#FFF' }]}>Réserver</Text>
         </TouchableOpacity>
       </View>
+      )}
 
       {/* Review Modal — Glassmorphism with feathered edges */}
       <Modal visible={showReviewModal} animationType="slide" transparent onRequestClose={() => setShowReviewModal(false)}>
