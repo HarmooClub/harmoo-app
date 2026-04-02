@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator, Image, Dimensions, ImageBackground, Modal, Pressable } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator, Image, Dimensions, ImageBackground, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -84,13 +84,11 @@ export default function DiscoverScreen() {
     }
   }, [user, triggerAuthPopup]);
 
-  // Timer: 15s after mount if no actions
+  // Timer: 15s after mount, trigger popup regardless
   useEffect(() => {
     if (user) return;
     const timer = setTimeout(() => {
-      if (actionCountRef.current === 0) {
-        triggerAuthPopup();
-      }
+      triggerAuthPopup();
     }, 15000);
     return () => clearTimeout(timer);
   }, [user, triggerAuthPopup]);
@@ -396,13 +394,8 @@ export default function DiscoverScreen() {
         contentContainerStyle={{ paddingBottom: spacing.xxl }}
       />
 
-      {/* Auth Popup Modal */}
-      <Modal
-        visible={showAuthPopup}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowAuthPopup(false)}
-      >
+      {/* Auth Popup Overlay */}
+      {showAuthPopup && (
         <Pressable style={styles.modalOverlay} onPress={() => setShowAuthPopup(false)}>
           <Pressable style={[styles.modalContent, { backgroundColor: theme.card }]} onPress={() => {}}>
             <TouchableOpacity style={styles.modalClose} onPress={() => setShowAuthPopup(false)}>
@@ -432,7 +425,7 @@ export default function DiscoverScreen() {
             </TouchableOpacity>
           </Pressable>
         </Pressable>
-      </Modal>
+      )}
     </SafeAreaView>
   );
 }
@@ -607,11 +600,16 @@ const styles = StyleSheet.create({
   },
   // Modal
   modalOverlay: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
+    zIndex: 999,
   },
   modalContent: {
     width: '100%',
