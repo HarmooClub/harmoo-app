@@ -15,35 +15,34 @@ export default function SetupFreelanceScreen() {
   const { updateUser } = useAuth();
   const router = useRouter();
 
-  const [step, setStep] = useState<1 | 2>(1);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedProfession, setSelectedProfession] = useState<string | null>(null);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [primaryCategory, setPrimaryCategory] = useState<string | null>(null);
+  const [primaryProfession, setPrimaryProfession] = useState<string | null>(null);
+  const [secondaryCategory, setSecondaryCategory] = useState<string | null>(null);
+  const [secondaryProfession, setSecondaryProfession] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleCategorySelect = (catId: string) => {
-    setSelectedCategory(catId);
-    setSelectedProfession(null);
-    setStep(2);
-  };
-
   const handleBack = () => {
-    if (step === 2) {
-      setStep(1);
-      setSelectedProfession(null);
-    } else {
-      router.back();
-    }
+    if (step === 4) setStep(3);
+    else if (step === 3) setStep(2);
+    else if (step === 2) { setStep(1); setPrimaryProfession(null); }
+    else router.back();
   };
 
   const handleConfirm = async () => {
-    if (!selectedCategory || !selectedProfession) return;
+    if (!primaryCategory || !primaryProfession) return;
     setIsLoading(true);
     try {
+      const categories = [primaryCategory];
+      const subcategories = [primaryProfession];
+      if (secondaryCategory) categories.push(secondaryCategory);
+      if (secondaryProfession) subcategories.push(secondaryProfession);
+
       await updateUser({
         is_provider_mode: true,
         user_type: 'freelancer',
-        categories: [selectedCategory],
-        subcategories: [selectedProfession],
+        categories,
+        subcategories,
       });
       if (Platform.OS === 'web') {
         window.alert('Mode Artiste-Entrepreneur activé !');
@@ -58,6 +57,13 @@ export default function SetupFreelanceScreen() {
     }
   };
 
+  const stepLabels = {
+    1: { title: 'Domaine principal', sub: 'Dans quel domaine exercez-vous principalement ?' },
+    2: { title: 'Profession principale', sub: `Professions en ${CATEGORY_NAMES[primaryCategory || '']}` },
+    3: { title: 'Domaine secondaire', sub: 'Un autre domaine ? (optionnel)' },
+    4: { title: 'Profession secondaire', sub: `Professions en ${CATEGORY_NAMES[secondaryCategory || '']}` },
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
@@ -66,12 +72,10 @@ export default function SetupFreelanceScreen() {
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={[typography.displayMedium, { color: theme.title }]}>
-            {step === 1 ? 'Votre domaine' : 'Votre profession'}
+            {stepLabels[step].title}
           </Text>
           <Text style={[typography.bodySmall, { color: theme.text, marginTop: spacing.xs }]}>
-            {step === 1
-              ? 'Dans quel domaine exercez-vous ?'
-              : `Professions en ${CATEGORY_NAMES[selectedCategory || '']}`}
+            {stepLabels[step].sub}
           </Text>
         </View>
       </View>
@@ -79,12 +83,14 @@ export default function SetupFreelanceScreen() {
       {/* Step indicator */}
       <View style={styles.stepRow}>
         <View style={[styles.stepDot, { backgroundColor: theme.primary }]} />
-        <View style={[styles.stepLine, { backgroundColor: step === 2 ? theme.primary : theme.border }]} />
-        <View style={[styles.stepDot, { backgroundColor: step === 2 ? theme.primary : theme.border }]} />
+        <View style={[styles.stepLine, { backgroundColor: step >= 2 ? theme.primary : theme.border }]} />
+        <View style={[styles.stepDot, { backgroundColor: step >= 2 ? theme.primary : theme.border }]} />
+        <View style={[styles.stepLine, { backgroundColor: step >= 3 ? theme.primary : theme.border }]} />
+        <View style={[styles.stepDot, { backgroundColor: step >= 3 ? theme.primary : theme.border }]} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Step 1: Category */}
+        {/* Step 1: Primary category */}
         {step === 1 && (
           <View style={styles.grid}>
             {Object.entries(CATEGORY_NAMES).map(([catId, catName]) => (
@@ -94,7 +100,7 @@ export default function SetupFreelanceScreen() {
                   backgroundColor: theme.card,
                   borderColor: theme.border,
                 }]}
-                onPress={() => handleCategorySelect(catId)}
+                onPress={() => { setPrimaryCategory(catId); setPrimaryProfession(null); setStep(2); }}
                 activeOpacity={0.7}
               >
                 <Ionicons name={(CATEGORY_ICONS[catId] || 'grid') as any} size={28} color={theme.primary} />
@@ -106,11 +112,11 @@ export default function SetupFreelanceScreen() {
           </View>
         )}
 
-        {/* Step 2: Profession */}
-        {step === 2 && selectedCategory && (
+        {/* Step 2: Primary profession */}
+        {step === 2 && primaryCategory && (
           <View style={styles.professionList}>
-            {(CATEGORY_SUBCATEGORIES[selectedCategory] || []).map((profession) => {
-              const isSelected = selectedProfession === profession;
+            {(CATEGORY_SUBCATEGORIES[primaryCategory] || []).map((profession) => {
+              const isSelected = primaryProfession === profession;
               const display = profession.charAt(0).toUpperCase() + profession.slice(1);
               return (
                 <TouchableOpacity
@@ -119,7 +125,7 @@ export default function SetupFreelanceScreen() {
                     backgroundColor: isSelected ? theme.primarySoft : theme.card,
                     borderColor: isSelected ? theme.primary : theme.border,
                   }]}
-                  onPress={() => setSelectedProfession(profession)}
+                  onPress={() => setPrimaryProfession(profession)}
                   activeOpacity={0.7}
                 >
                   <Text style={[typography.bodyMedium, {
@@ -133,7 +139,76 @@ export default function SetupFreelanceScreen() {
               );
             })}
 
-            {selectedProfession && (
+            {primaryProfession && (
+              <Button
+                title="Suivant → Domaine secondaire (optionnel)"
+                onPress={() => setStep(3)}
+                style={{ marginTop: spacing.xl }}
+              />
+            )}
+          </View>
+        )}
+
+        {/* Step 3: Secondary category (optional) */}
+        {step === 3 && (
+          <View>
+            <View style={styles.grid}>
+              {Object.entries(CATEGORY_NAMES)
+                .filter(([catId]) => catId !== primaryCategory)
+                .map(([catId, catName]) => (
+                <TouchableOpacity
+                  key={catId}
+                  style={[styles.categoryCard, {
+                    backgroundColor: secondaryCategory === catId ? theme.primarySoft : theme.card,
+                    borderColor: secondaryCategory === catId ? theme.primary : theme.border,
+                  }]}
+                  onPress={() => { setSecondaryCategory(catId); setSecondaryProfession(null); setStep(4); }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name={(CATEGORY_ICONS[catId] || 'grid') as any} size={28} color={secondaryCategory === catId ? theme.primary : theme.textSecondary} />
+                  <Text style={[typography.labelMedium, { color: theme.title, marginTop: spacing.sm, textAlign: 'center' }]} numberOfLines={2}>
+                    {catName}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Button
+              title="Passer et activer mon profil"
+              onPress={handleConfirm}
+              isLoading={isLoading}
+              style={{ marginTop: spacing.xl }}
+            />
+          </View>
+        )}
+
+        {/* Step 4: Secondary profession */}
+        {step === 4 && secondaryCategory && (
+          <View style={styles.professionList}>
+            {(CATEGORY_SUBCATEGORIES[secondaryCategory] || []).map((profession) => {
+              const isSelected = secondaryProfession === profession;
+              const display = profession.charAt(0).toUpperCase() + profession.slice(1);
+              return (
+                <TouchableOpacity
+                  key={profession}
+                  style={[styles.professionItem, {
+                    backgroundColor: isSelected ? theme.primarySoft : theme.card,
+                    borderColor: isSelected ? theme.primary : theme.border,
+                  }]}
+                  onPress={() => setSecondaryProfession(profession)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[typography.bodyMedium, {
+                    color: isSelected ? theme.primary : theme.title,
+                    fontWeight: isSelected ? '600' : '400',
+                  }]}>
+                    {display}
+                  </Text>
+                  {isSelected && <Ionicons name="checkmark-circle" size={22} color={theme.primary} />}
+                </TouchableOpacity>
+              );
+            })}
+
+            {secondaryProfession && (
               <Button
                 title="Activer le mode Artiste-Entrepreneur"
                 onPress={handleConfirm}

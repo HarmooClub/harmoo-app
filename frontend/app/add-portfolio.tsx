@@ -20,7 +20,7 @@ export default function AddPortfolioScreen() {
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [image, setImage] = useState<string | null>(null);
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [spotifyUrl, setSpotifyUrl] = useState('');
@@ -45,14 +45,14 @@ export default function AddPortfolioScreen() {
 
   const handleSubmit = async () => {
     if (!title.trim()) { Alert.alert('Erreur', 'Le titre est requis'); return; }
-    if (!selectedCategory) { Alert.alert('Erreur', 'Choisissez une catégorie'); return; }
+    if (!selectedCategories.length) { Alert.alert('Erreur', 'Choisissez au moins une catégorie'); return; }
 
     setIsLoading(true);
     try {
       const payload: any = {
         title: title.trim(),
         description: description.trim(),
-        category: selectedCategory,
+        categories: selectedCategories,
       };
       if (image) payload.image = image;
       if (youtubeUrl.trim()) payload.youtube_url = youtubeUrl.trim();
@@ -94,11 +94,11 @@ export default function AddPortfolioScreen() {
           <Input label="Titre du projet" placeholder="Ex: Clip musical pour artiste X" value={title} onChangeText={setTitle} icon="document-text-outline" />
           <Input label="Description" placeholder="Décrivez votre projet..." value={description} onChangeText={setDescription} multiline numberOfLines={3} icon="text-outline" />
 
-          {/* Category selection — ALL categories */}
-          <Text style={[typography.labelMedium, { color: theme.title, marginBottom: spacing.md }]}>Catégorie</Text>
+          {/* Category selection — multi-select */}
+          <Text style={[typography.labelMedium, { color: theme.title, marginBottom: spacing.md }]}>Catégories (plusieurs possibles)</Text>
           <View style={styles.categoryGrid}>
             {allCategories.map(([catId, catName]) => {
-              const isSelected = selectedCategory === catId;
+              const isSelected = selectedCategories.includes(catId);
               return (
                 <TouchableOpacity
                   key={catId}
@@ -106,8 +106,15 @@ export default function AddPortfolioScreen() {
                     backgroundColor: isSelected ? theme.primary : theme.card,
                     borderColor: isSelected ? theme.primary : theme.border,
                   }]}
-                  onPress={() => setSelectedCategory(catId)}
+                  onPress={() => {
+                    setSelectedCategories(prev =>
+                      prev.includes(catId)
+                        ? prev.filter(c => c !== catId)
+                        : [...prev, catId]
+                    );
+                  }}
                 >
+                  {isSelected && <Ionicons name="checkmark-circle" size={14} color="#FFF" />}
                   <Ionicons
                     name={(CATEGORY_ICONS[catId] || 'grid') as any}
                     size={16}

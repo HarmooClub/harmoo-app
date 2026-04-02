@@ -259,7 +259,7 @@ class PortfolioItem(BaseModel):
     description: Optional[str] = ""
     image: Optional[str] = None
     media: List[str] = []
-    category: str
+    categories: List[str] = []
     completion_date: Optional[str] = None
     youtube_url: Optional[str] = None
     spotify_url: Optional[str] = None
@@ -272,7 +272,8 @@ class PortfolioCreate(BaseModel):
     description: Optional[str] = ""
     image: Optional[str] = None
     media: List[str] = []
-    category: str
+    categories: List[str] = []
+    category: Optional[str] = None  # backward compat
     completion_date: Optional[str] = None
     youtube_url: Optional[str] = None
     spotify_url: Optional[str] = None
@@ -859,7 +860,13 @@ async def create_portfolio_item(
     if current_user["user_type"] != "freelancer":
         raise HTTPException(status_code=403, detail="Seuls les freelances peuvent créer des éléments de portfolio")
     
-    portfolio_item = PortfolioItem(user_id=current_user["id"], **item.dict())
+    item_data = item.dict()
+    # backward compat: if old 'category' field sent, convert to categories list
+    if item_data.get("category") and not item_data.get("categories"):
+        item_data["categories"] = [item_data["category"]]
+    item_data.pop("category", None)
+    
+    portfolio_item = PortfolioItem(user_id=current_user["id"], **item_data)
     await db.portfolio.insert_one(portfolio_item.dict())
     return portfolio_item.dict()
 
