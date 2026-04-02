@@ -438,13 +438,14 @@ export default function DiscoverScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   logoHeader: {
-    alignItems: 'flex-start',
+    alignItems: 'center',
     paddingHorizontal: HORIZONTAL_PAD,
-    paddingTop: spacing.xs,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
   },
   headerLogo: {
-    width: 110,
-    height: 32,
+    width: 550,
+    height: 160,
   },
   header: {
     flexDirection: 'row',
