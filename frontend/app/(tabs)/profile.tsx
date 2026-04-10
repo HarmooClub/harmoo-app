@@ -227,7 +227,7 @@ export default function ProfileScreen() {
               <Text style={[styles.membershipTitle, { color: theme.title }]}>Harmoo Club</Text>
               <Badge label="30€ à vie" variant="accent" />
             </View>
-            <Text style={[styles.membershipDesc, { color: theme.textSecondary }]}>Rejoignez les 50 premiers membres</Text>
+            <Text style={[styles.membershipDesc, { color: theme.textSecondary }]}>Rejoignez les 10 premiers membres</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#DC1B78" />
         </TouchableOpacity>
