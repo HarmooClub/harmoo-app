@@ -19,7 +19,7 @@ import string
 # import resend  # Temporarily disabled for deployment
 
 ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
+load_dotenv(ROOT_DIR / '.env', override=True)
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -1212,7 +1212,7 @@ async def process_payment(
 import stripe
 from fastapi import Request
 
-STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY", "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")
+STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY", "")
 stripe.api_key = STRIPE_API_KEY
 
 class CreateCheckoutRequest(BaseModel):
@@ -1430,7 +1430,6 @@ async def stripe_webhook(request: Request):
 
 # ==================== SUBSCRIPTION ENDPOINTS ====================
 
-import stripe
 stripe.api_key = STRIPE_API_KEY
 
 class SubscriptionRequest(BaseModel):
@@ -2106,7 +2105,7 @@ async def join_membership(current_user: dict = Depends(get_current_user)):
     
     # Count total active members
     total_members = await db.memberships.count_documents({"is_active": True})
-    is_early_member = total_members < 50
+    is_early_member = total_members < CLUB_MAX_MEMBERS
     
     benefits = []
     if is_early_member:
@@ -2138,14 +2137,14 @@ async def get_membership_status(current_user: dict = Depends(get_current_user)):
         {"user_id": current_user["id"], "is_active": True}
     )
     total_members = await db.memberships.count_documents({"is_active": True})
-    spots_left = max(0, 50 - total_members)
+    spots_left = max(0, CLUB_MAX_MEMBERS - total_members)
     
     if membership:
         membership.pop("_id", None)
         return {
             "is_member": True,
             "membership": membership,
-            "is_early_member": membership.get("member_number", 99) <= 50,
+            "is_early_member": membership.get("member_number", 99) <= CLUB_MAX_MEMBERS,
             "spots_left": spots_left,
             "total_members": total_members
         }
@@ -2365,18 +2364,18 @@ async def confirm_mock_payment(
         "message": "Bienvenue dans le Harmoo Club !"
     }
 
-@api_router.get("/membership/status")
-async def get_membership_status(current_user: dict = Depends(get_current_user)):
+@api_router.get("/membership/status-v2")
+async def get_membership_status_v2(current_user: dict = Depends(get_current_user)):
     """Get membership status for current user"""
     membership = await db.memberships.find_one({"user_id": current_user["id"]})
     total_members = await db.memberships.count_documents({"is_active": True})
-    spots_left = max(0, 50 - total_members)
+    spots_left = max(0, CLUB_MAX_MEMBERS - total_members)
     
     return {
         "is_member": membership is not None and membership.get("is_active", False),
         "membership": {k: v for k, v in membership.items() if k != "_id"} if membership else None,
         "spots_left": spots_left,
-        "total_spots": 50,
+        "total_spots": CLUB_MAX_MEMBERS,
         "total_members": total_members
     }
 
