@@ -3,7 +3,6 @@ node_modules/
 __pycache__/
 *.pyc
 .env
-backend/.env
 frontend/.env
 *.zip
 frontend/.metro-cache*
