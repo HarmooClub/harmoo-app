@@ -1679,17 +1679,29 @@ async def stripe_subscription_webhook(request: Request):
 
 # ==================== HARMOO CLUB ENDPOINTS ====================
 
-CLUB_PRICE = 30  # €
+CLUB_PRICE = 60  # €
 CLUB_MAX_MEMBERS = 10
 
 ADMIN_EMAIL = "alvin.m11@yahoo.com"
 
 @api_router.post("/admin/set-club-badge")
 async def admin_set_club_badge(data: dict, current_user: dict = Depends(get_current_user)):
-    """Admin endpoint to set club badge for users by name"""
     if current_user.get("email") != ADMIN_EMAIL:
         raise HTTPException(status_code=403, detail="Admin only")
     names = data.get("names", [])
+    results = []
+    for name in names:
+        r = await db.users.update_many(
+            {"full_name": {"$regex": name, "$options": "i"}},
+            {"$set": {"is_harmoo_club": True, "club_joined_at": datetime.utcnow()}}
+        )
+        results.append({"name": name, "updated": r.modified_count})
+    return {"results": results}
+
+@api_router.get("/admin/init-club-badges")
+async def init_club_badges():
+    """One-time init endpoint to set club badges for founding members"""
+    names = ["Flavie", "Fournier"]
     results = []
     for name in names:
         r = await db.users.update_many(
@@ -2299,7 +2311,7 @@ async def create_checkout_session(
         "url": f"https://checkout.stripe.com/mock/{session_id}",
         "status": "created",
         "plan": plan_type,
-        "amount": 3000,  # 30€ in cents
+        "amount": 6000,  # 60€ in cents
         "currency": "eur",
         "mock": True
     }
