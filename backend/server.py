@@ -1212,7 +1212,7 @@ async def process_payment(
 import stripe
 from fastapi import Request
 
-STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY", "")
+STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY", "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")
 stripe.api_key = STRIPE_API_KEY
 
 class CreateCheckoutRequest(BaseModel):
