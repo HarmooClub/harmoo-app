@@ -251,6 +251,7 @@ class UserProfileUpdate(BaseModel):
     phone: Optional[str] = None
     bank_details: Optional[Dict[str, str]] = None
     organization: Optional[str] = None
+    user_type: Optional[str] = None
 
 class PortfolioItem(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
