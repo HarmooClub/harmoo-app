@@ -117,7 +117,7 @@ export default function BookingScreen() {
       // Get origin URL for Stripe redirect
       const originUrl = Platform.OS === 'web' 
         ? window.location.origin 
-        : process.env.EXPO_PUBLIC_BACKEND_URL || '';
+        : process.env.EXPO_PUBLIC_BACKEND_URL || 'https://harmoo-backen.onrender.com';
       
       // Create Stripe checkout session
       const response = await paymentsApi.createStripeCheckout(bookingId, originUrl);

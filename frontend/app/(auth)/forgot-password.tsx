@@ -8,7 +8,7 @@ import { Button } from '../../src/components/Button';
 import { Input } from '../../src/components/Input';
 import { spacing, typography, radius } from '../../src/theme';
 
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://harmoo-backen.onrender.com';
 
 // Use same axios pattern as api.ts
 import axios from 'axios';

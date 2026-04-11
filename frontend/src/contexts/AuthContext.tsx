@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import axios from 'axios';
 import { Platform } from 'react-native';
 
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://harmoo-backen.onrender.com';
 
 interface User {
   id: string;
