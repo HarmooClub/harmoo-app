@@ -1169,7 +1169,11 @@ async def process_payment(
     tier = freelancer.get("subscription_tier", "essentiel")
     commission_rates = {"essentiel": 0.15, "standard": 0.06, "business": 0.0}
     
-    commission = booking["total_price"] * commission_rates[tier]
+    # Harmoo Club members are exempt from all commissions
+    if freelancer.get("is_harmoo_club"):
+        commission = 0.0
+    else:
+        commission = booking["total_price"] * commission_rates.get(tier, 0.15)
     freelancer_amount = booking["total_price"] - commission
     
     await db.bookings.update_one(
@@ -1313,7 +1317,11 @@ async def get_stripe_payment_status(
         tier = freelancer.get("subscription_tier", "essentiel") if freelancer else "essentiel"
         commission_rates = {"essentiel": 0.15, "standard": 0.06, "business": 0.0}
         
-        commission = transaction["amount"] * commission_rates.get(tier, 0.15)
+        # Harmoo Club members are exempt from all commissions
+        if freelancer and freelancer.get("is_harmoo_club"):
+            commission = 0.0
+        else:
+            commission = transaction["amount"] * commission_rates.get(tier, 0.15)
         freelancer_amount = transaction["amount"] - commission
         
         await db.bookings.update_one(
