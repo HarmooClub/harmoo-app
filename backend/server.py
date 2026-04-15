@@ -486,9 +486,15 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         user_id: str = payload.get("sub")
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid token")
-        user = await db.users.find_one({"id": user_id})
+        # PERF: Exclude heavy base64 fields from auth lookup
+        user = await db.users.find_one(
+            {"id": user_id},
+            {"avatar": 0, "portfolio": 0}
+        )
         if user is None:
             raise HTTPException(status_code=401, detail="User not found")
+        # Set avatar URL instead of base64
+        user["avatar"] = f"/api/avatar/{user_id}"
         return user
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -590,7 +596,11 @@ async def register(user: UserCreate):
 
 @api_router.post("/auth/login", response_model=Token)
 async def login(credentials: UserLogin):
-    user = await db.users.find_one({"email": credentials.email})
+    # PERF: Exclude heavy fields from login query
+    user = await db.users.find_one(
+        {"email": credentials.email},
+        {"avatar": 0, "portfolio": 0}
+    )
     if not user:
         raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
     
@@ -600,18 +610,22 @@ async def login(credentials: UserLogin):
     access_token = create_access_token(data={"sub": user["id"]})
     user_data = {k: v for k, v in user.items() if k != "hashed_password" and k != "_id"}
     
-    # PERF: Replace base64 avatar with URL to avoid sending MB of data
-    if user_data.get("avatar", "").startswith("data:image"):
-        user_data["avatar"] = f"/api/avatar/{user_data['id']}"
+    # Set avatar URL
+    user_data["avatar"] = f"/api/avatar/{user_data['id']}"
     
     return Token(access_token=access_token, token_type="bearer", user=user_data)
 
 @api_router.get("/auth/me")
 async def get_me(current_user: dict = Depends(get_current_user)):
-    user_data = {k: v for k, v in current_user.items() if k != "hashed_password" and k != "_id"}
-    # PERF: Replace base64 avatar with URL
-    if user_data.get("avatar", "").startswith("data:image"):
-        user_data["avatar"] = f"/api/avatar/{user_data['id']}"
+    # Re-fetch without heavy fields for speed
+    user = await db.users.find_one(
+        {"id": current_user["id"]},
+        {"avatar": 0, "portfolio": 0, "hashed_password": 0}
+    )
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user_data = {k: v for k, v in user.items() if k != "_id"}
+    user_data["avatar"] = f"/api/avatar/{user_data['id']}"
     return user_data
 
 # ==================== EMAIL VERIFICATION ====================
@@ -893,6 +907,10 @@ async def get_freelancer(freelancer_id: str):
         raise HTTPException(status_code=404, detail="Freelance non trouvé")
     
     freelancer_data = {k: v for k, v in freelancer.items() if k != "hashed_password" and k != "_id"}
+    
+    # PERF: Replace base64 avatar with URL
+    if freelancer_data.get("avatar", "").startswith("data:image"):
+        freelancer_data["avatar"] = f"/api/avatar/{freelancer_data['id']}"
     
     portfolio = await db.portfolio.find({"user_id": freelancer["id"]}).to_list(50)
     freelancer_data["portfolio"] = [{k: v for k, v in p.items() if k != "_id"} for p in portfolio]
