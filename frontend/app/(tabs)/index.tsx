@@ -5,7 +5,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../src/contexts/ThemeContext';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLocation } from '../../src/hooks/useLocation';
@@ -98,28 +97,11 @@ export default function DiscoverScreen() {
   useEffect(() => { requestPermission(); }, []);
   useEffect(() => { loadInitialData(); }, [selectedCategory, location]);
 
-  // PERF: Load cached data first, then fetch fresh data in background
-  const CACHE_KEY = 'harmoo_feed_cache';
-  
   const loadInitialData = async () => {
     setPage(0);
     setHasMore(true);
+    setIsLoading(true);
     
-    // Show cached data immediately while loading fresh data
-    if (freelancers.length === 0) {
-      try {
-        const cached = await AsyncStorage.getItem(CACHE_KEY);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (parsed.length > 0 && selectedCategory === 'all') {
-            setFreelancers(parsed);
-            setIsLoading(false); // Show cached data immediately
-          }
-        }
-      } catch (e) {}
-    }
-    
-    setIsLoading(freelancers.length === 0);
     try {
       const params: any = { limit: PAGE_SIZE, skip: 0 };
       if (selectedCategory !== 'all') params.category = selectedCategory;
@@ -137,19 +119,15 @@ export default function DiscoverScreen() {
       setFavorites(favoritesRes.data.map((f: any) => f.id));
       setHasMore(freelancersRes.data.length >= PAGE_SIZE);
       setPage(1);
-      
-      // Cache fresh data for next visit
-      if (selectedCategory === 'all' && freelancersRes.data.length > 0) {
-        AsyncStorage.setItem(CACHE_KEY, JSON.stringify(freelancersRes.data.slice(0, 20))).catch(() => {});
-      }
     } catch (error) {
       console.error('Failed to load data:', error);
-      if (freelancers.length === 0) setFreelancers([]);
+      setFreelancers([]);
     } finally { setIsLoading(false); }
   };
 
   const loadMore = async () => {
     if (!hasMore || isLoading) return;
+    setIsLoading(true);
     try {
       const params: any = { limit: PAGE_SIZE, skip: page * PAGE_SIZE };
       if (selectedCategory !== 'all') params.category = selectedCategory;
@@ -161,11 +139,16 @@ export default function DiscoverScreen() {
       }
       const res = await freelancersApi.getFreelancers(params);
       if (res.data.length > 0) {
-        setFreelancers(prev => [...prev, ...res.data]);
+        setFreelancers(prev => {
+          const existingIds = new Set(prev.map((f: any) => f.id));
+          const newItems = res.data.filter((f: any) => !existingIds.has(f.id));
+          return [...prev, ...newItems];
+        });
         setPage(prev => prev + 1);
       }
       setHasMore(res.data.length >= PAGE_SIZE);
     } catch (error) { console.error(error); }
+    finally { setIsLoading(false); }
   };
 
   const toggleFavorite = async (freelancerId: string) => {

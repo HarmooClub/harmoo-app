@@ -89,12 +89,35 @@ logger = logging.getLogger(__name__)
 
 # ==================== AVATAR SERVING ENDPOINT ====================
 import base64
+from functools import lru_cache
+
+# In-memory avatar cache to avoid repeated DB reads
+_avatar_cache: dict = {}
+_avatar_cache_ttl: dict = {}
+AVATAR_CACHE_DURATION = 3600  # 1 hour
 
 @api_router.get("/avatar/{user_id}")
 async def get_avatar(user_id: str):
-    """Serve avatar image with aggressive caching"""
+    """Serve avatar image with aggressive caching and memory cache"""
     from starlette.responses import Response
-    user = await db.users.find_one({"id": user_id}, {"avatar": 1})
+    import time
+    
+    # Check memory cache first
+    now = time.time()
+    if user_id in _avatar_cache and (now - _avatar_cache_ttl.get(user_id, 0)) < AVATAR_CACHE_DURATION:
+        cached = _avatar_cache[user_id]
+        return Response(
+            content=cached["bytes"],
+            media_type=cached["mime"],
+            headers={
+                "Cache-Control": "public, max-age=86400, s-maxage=604800",
+                "CDN-Cache-Control": "public, max-age=604800",
+                "X-Cache": "HIT",
+            }
+        )
+    
+    # Only fetch avatar field from DB
+    user = await db.users.find_one({"id": user_id}, {"avatar": 1, "_id": 0})
     if not user or not user.get("avatar"):
         raise HTTPException(status_code=404, detail="No avatar")
     
@@ -103,16 +126,54 @@ async def get_avatar(user_id: str):
         header, b64data = avatar.split(",", 1)
         mime_type = header.split(":")[1].split(";")[0]
         image_bytes = base64.b64decode(b64data)
+        
+        # Store in memory cache
+        _avatar_cache[user_id] = {"bytes": image_bytes, "mime": mime_type}
+        _avatar_cache_ttl[user_id] = now
+        
         return Response(
             content=image_bytes,
             media_type=mime_type,
             headers={
                 "Cache-Control": "public, max-age=86400, s-maxage=604800",
                 "CDN-Cache-Control": "public, max-age=604800",
+                "X-Cache": "MISS",
             }
         )
     from starlette.responses import RedirectResponse
     return RedirectResponse(url=avatar, status_code=302)
+
+# Warmup: preload all freelancer avatars into cache on startup
+@app.on_event("startup")
+async def warmup_avatar_cache():
+    """Pre-load all freelancer avatars into memory cache"""
+    import time as _time
+    try:
+        users = await db.users.find(
+            {"user_type": "freelancer", "avatar": {"$exists": True, "$ne": ""}},
+            {"id": 1, "avatar": 1, "_id": 0}
+        ).to_list(100)
+        
+        now = _time.time()
+        loaded = 0
+        for u in users:
+            avatar = u.get("avatar", "")
+            uid = u.get("id", "")
+            if avatar.startswith("data:image") and uid:
+                try:
+                    header, b64data = avatar.split(",", 1)
+                    mime_type = header.split(":")[1].split(";")[0]
+                    image_bytes = base64.b64decode(b64data)
+                    _avatar_cache[uid] = {"bytes": image_bytes, "mime": mime_type}
+                    _avatar_cache_ttl[uid] = now
+                    loaded += 1
+                except Exception:
+                    pass
+        logger.info(f"Avatar cache warmup: {loaded}/{len(users)} avatars loaded")
+    except Exception as e:
+        logger.warning(f"Avatar warmup failed: {e}")
+
+
 
 # ==================== CATEGORIES & SUBCATEGORIES ====================
 
