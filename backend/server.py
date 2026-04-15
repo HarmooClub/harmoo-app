@@ -822,8 +822,16 @@ async def get_freelancers(
             {"subcategories": {"$regex": search, "$options": "i"}}
         ]
     
-    # PERF: Use projection to exclude heavy fields from list query
-    projection = {"hashed_password": 0, "_id": 0, "avatar": 0}
+    # PERF: Use INCLUSION projection - only fetch needed fields, skip heavy base64 data
+    projection = {
+        "_id": 0, "id": 1, "full_name": 1, "email": 1, "bio": 1,
+        "user_type": 1, "categories": 1, "subcategories": 1,
+        "hourly_rate": 1, "city": 1, "location": 1,
+        "is_available": 1, "is_provider_mode": 1,
+        "is_harmoo_club": 1, "club_joined_at": 1,
+        "rating": 1, "total_reviews": 1, "profile_slug": 1,
+        "organization": 1, "created_at": 1,
+    }
     freelancers_cursor = db.users.find(query, projection).skip(skip).limit(limit * 3)
     freelancers = await freelancers_cursor.to_list(limit * 3)
     
