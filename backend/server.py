@@ -2,6 +2,7 @@ from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
@@ -85,6 +86,33 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# ==================== AVATAR SERVING ENDPOINT ====================
+import base64
+
+@api_router.get("/avatar/{user_id}")
+async def get_avatar(user_id: str):
+    """Serve avatar image with aggressive caching"""
+    from starlette.responses import Response
+    user = await db.users.find_one({"id": user_id}, {"avatar": 1})
+    if not user or not user.get("avatar"):
+        raise HTTPException(status_code=404, detail="No avatar")
+    
+    avatar = user["avatar"]
+    if avatar.startswith("data:image"):
+        header, b64data = avatar.split(",", 1)
+        mime_type = header.split(":")[1].split(";")[0]
+        image_bytes = base64.b64decode(b64data)
+        return Response(
+            content=image_bytes,
+            media_type=mime_type,
+            headers={
+                "Cache-Control": "public, max-age=86400, s-maxage=604800",
+                "CDN-Cache-Control": "public, max-age=604800",
+            }
+        )
+    from starlette.responses import RedirectResponse
+    return RedirectResponse(url=avatar, status_code=302)
 
 # ==================== CATEGORIES & SUBCATEGORIES ====================
 
@@ -800,6 +828,11 @@ async def get_freelancers(
     result = []
     for freelancer in freelancers:
         freelancer_data = {k: v for k, v in freelancer.items() if k != "hashed_password" and k != "_id"}
+        
+        # PERF: Replace base64 avatars with URL to avatar endpoint (reduces JSON from 7MB to ~10KB)
+        avatar = freelancer_data.get("avatar", "")
+        if avatar and avatar.startswith("data:image"):
+            freelancer_data["avatar"] = f"/api/avatar/{freelancer_data['id']}"
         
         if lat is not None and lng is not None and freelancer.get("location"):
             distance_km = calculate_distance(
@@ -2752,6 +2785,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# GZip compression for all responses > 500 bytes
+app.add_middleware(GZipMiddleware, minimum_size=500)
 
 @app.on_event("startup")
 async def mark_seeded_profiles():

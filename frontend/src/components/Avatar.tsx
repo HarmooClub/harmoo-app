@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Image, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { palette, radius } from '../theme';
@@ -18,9 +19,13 @@ function getColorFromName(name: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://harmoo-backen.onrender.com';
+
 export function getAvatarUrl(avatar?: string | null, name?: string): string | null {
   if (avatar && avatar.startsWith('http')) return avatar;
   if (avatar && avatar.startsWith('data:')) return avatar;
+  // Avatar URL from API (relative path like /api/avatar/xxx)
+  if (avatar && avatar.startsWith('/api/avatar/')) return `${API_URL}${avatar}`;
   // No avatar — return null to trigger initials display
   return null;
 }
@@ -59,6 +64,11 @@ export function Avatar({
     <Image
       source={{ uri: resolvedUri }}
       style={[{ width: size, height: size, borderRadius: br }, style]}
+      contentFit="cover"
+      transition={200}
+      cachePolicy="memory-disk"
+      recyclingKey={resolvedUri}
+      placeholder={bgColor}
     />
   ) : (
     <View

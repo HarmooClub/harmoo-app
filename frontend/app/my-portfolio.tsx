@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, Image, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, Alert, Platform } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -64,7 +65,7 @@ export default function MyPortfolioScreen() {
         renderItem={({ item }) => (
           <View style={[styles.gridItem, { backgroundColor: theme.card }]}>
             {item.image ? (
-              <Image source={{ uri: item.image }} style={styles.itemImage} />
+              <Image source={{ uri: item.image }} style={styles.itemImage} contentFit="cover" cachePolicy="memory-disk" transition={200} />
             ) : (
               <View style={[styles.itemImagePlaceholder, { backgroundColor: theme.primarySoft }]}>
                 <Ionicons name="image" size={24} color={theme.primary} />
@@ -110,7 +111,7 @@ const styles = StyleSheet.create({
   addBtn: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   grid: { paddingHorizontal: spacing.xl, paddingBottom: spacing.xxl },
   gridItem: { flex: 1, borderRadius: radius.lg, overflow: 'hidden', marginBottom: spacing.sm },
-  itemImage: { width: '100%', height: 130, resizeMode: 'cover' },
+  itemImage: { width: '100%', height: 130 },
   itemImagePlaceholder: { width: '100%', height: 130, alignItems: 'center', justifyContent: 'center' },
   itemContent: { padding: spacing.md },
   itemDelete: {

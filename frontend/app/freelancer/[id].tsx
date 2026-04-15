@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, Dimensions, Animated, TextInput, Modal, Platform, Share, FlatList, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Dimensions, Animated, TextInput, Modal, Platform, Share, FlatList, Linking } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -154,7 +155,7 @@ export default function FreelancerDetailScreen() {
       {/* Full-screen header image with parallax */}
       <Animated.View style={[styles.headerImage, { transform: [{ translateY: headerTranslateY }], opacity: headerOpacity }]}>
         {hasAvatar ? (
-          <Image source={{ uri: avatarUrl }} style={styles.profileImage} />
+          <Image source={{ uri: avatarUrl }} style={styles.profileImage} contentFit="cover" cachePolicy="memory-disk" transition={300} />
         ) : (
           <View style={[styles.profileImage, { backgroundColor: getPlaceholderColor(freelancer.full_name) + '20' }]}>
             <View style={styles.profilePlaceholder}>
@@ -322,7 +323,7 @@ export default function FreelancerDetailScreen() {
                       onPress={() => link && Linking.openURL(link)}
                     >
                       {item.image && (
-                        <Image source={{ uri: item.image }} style={styles.carouselImage} />
+                        <Image source={{ uri: item.image }} style={styles.carouselImage} contentFit="cover" cachePolicy="memory-disk" transition={200} />
                       )}
                       <View style={styles.carouselInfo}>
                         <Text style={[typography.labelMedium, { color: theme.title }]} numberOfLines={1}>{item.title}</Text>
@@ -535,7 +536,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   headerImage: { position: 'absolute', top: 0, left: 0, right: 0, height: HEADER_HEIGHT, zIndex: 0 },
-  profileImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  profileImage: { width: '100%', height: '100%' },
   profilePlaceholder: {
     flex: 1,
     alignItems: 'center',

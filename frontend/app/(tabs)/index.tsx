@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator, Image, Dimensions, ImageBackground, Pressable } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator, Dimensions, Pressable } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -205,7 +206,10 @@ export default function DiscoverScreen() {
           <Image
             source={{ uri: avatarUrl }}
             style={StyleSheet.absoluteFillObject}
-            resizeMode="cover"
+            contentFit="cover"
+            transition={300}
+            cachePolicy="memory-disk"
+            recyclingKey={item.id}
           />
         ) : (
           <View style={[StyleSheet.absoluteFillObject, { backgroundColor: getPlaceholderColor(item.full_name) + '25' }]}>
