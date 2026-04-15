@@ -2842,3 +2842,20 @@ async def admin_list_users(admin_key: str = ""):
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
+# Create MongoDB indexes on startup for performance
+@app.on_event("startup")
+async def create_indexes():
+    try:
+        await db.users.create_index("id", unique=True)
+        await db.users.create_index("email", unique=True)
+        await db.users.create_index("user_type")
+        await db.users.create_index("categories")
+        await db.users.create_index("is_available")
+        await db.users.create_index("profile_slug")
+        await db.bookings.create_index("client_id")
+        await db.bookings.create_index("freelancer_id")
+        await db.conversations.create_index("participants")
+        logger.info("MongoDB indexes created")
+    except Exception as e:
+        logger.warning(f"Index creation: {e}")

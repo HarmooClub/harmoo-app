@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from '../src/contexts/AuthContext';
@@ -6,8 +6,20 @@ import { ThemeProvider, useTheme } from '../src/contexts/ThemeContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://harmoo-backen.onrender.com';
+
 function RootLayoutNav() {
   const { theme, isDark } = useTheme();
+  
+  // Keep-alive: ping backend every 13 minutes to prevent Render cold starts
+  useEffect(() => {
+    const ping = () => {
+      fetch(`${API_URL}/api/health`).catch(() => {});
+    };
+    ping(); // Ping immediately on app load
+    const interval = setInterval(ping, 13 * 60 * 1000); // Every 13 min
+    return () => clearInterval(interval);
+  }, []);
   
   return (
     <>
