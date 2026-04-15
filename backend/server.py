@@ -98,7 +98,7 @@ AVATAR_CACHE_DURATION = 3600  # 1 hour
 
 @api_router.get("/avatar/{user_id}")
 async def get_avatar(user_id: str):
-    """Serve avatar image with aggressive caching and memory cache"""
+    """Serve avatar image with memory cache"""
     from starlette.responses import Response
     import time
     
@@ -111,13 +111,19 @@ async def get_avatar(user_id: str):
             media_type=cached["mime"],
             headers={
                 "Cache-Control": "public, max-age=86400, s-maxage=604800",
-                "CDN-Cache-Control": "public, max-age=604800",
                 "X-Cache": "HIT",
             }
         )
     
-    # Only fetch avatar field from DB
-    user = await db.users.find_one({"id": user_id}, {"avatar": 1, "_id": 0})
+    # Fetch ONLY avatar field
+    try:
+        user = await asyncio.wait_for(
+            db.users.find_one({"id": user_id}, {"avatar": 1, "_id": 0}),
+            timeout=10.0
+        )
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail="DB timeout")
+    
     if not user or not user.get("avatar"):
         raise HTTPException(status_code=404, detail="No avatar")
     
@@ -127,7 +133,7 @@ async def get_avatar(user_id: str):
         mime_type = header.split(":")[1].split(";")[0]
         image_bytes = base64.b64decode(b64data)
         
-        # Store in memory cache
+        # Cache in memory
         _avatar_cache[user_id] = {"bytes": image_bytes, "mime": mime_type}
         _avatar_cache_ttl[user_id] = now
         
@@ -136,43 +142,11 @@ async def get_avatar(user_id: str):
             media_type=mime_type,
             headers={
                 "Cache-Control": "public, max-age=86400, s-maxage=604800",
-                "CDN-Cache-Control": "public, max-age=604800",
                 "X-Cache": "MISS",
             }
         )
     from starlette.responses import RedirectResponse
     return RedirectResponse(url=avatar, status_code=302)
-
-# Warmup: preload all freelancer avatars into cache on startup
-@app.on_event("startup")
-async def warmup_avatar_cache():
-    """Pre-load all freelancer avatars into memory cache"""
-    import time as _time
-    try:
-        users = await db.users.find(
-            {"user_type": "freelancer", "avatar": {"$exists": True, "$ne": ""}},
-            {"id": 1, "avatar": 1, "_id": 0}
-        ).to_list(100)
-        
-        now = _time.time()
-        loaded = 0
-        for u in users:
-            avatar = u.get("avatar", "")
-            uid = u.get("id", "")
-            if avatar.startswith("data:image") and uid:
-                try:
-                    header, b64data = avatar.split(",", 1)
-                    mime_type = header.split(":")[1].split(";")[0]
-                    image_bytes = base64.b64decode(b64data)
-                    _avatar_cache[uid] = {"bytes": image_bytes, "mime": mime_type}
-                    _avatar_cache_ttl[uid] = now
-                    loaded += 1
-                except Exception:
-                    pass
-        logger.info(f"Avatar cache warmup: {loaded}/{len(users)} avatars loaded")
-    except Exception as e:
-        logger.warning(f"Avatar warmup failed: {e}")
-
 
 
 # ==================== CATEGORIES & SUBCATEGORIES ====================
