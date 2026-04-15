@@ -89,6 +89,7 @@ logger = logging.getLogger(__name__)
 
 # ==================== AVATAR SERVING ENDPOINT ====================
 import base64
+import asyncio as _asyncio
 from functools import lru_cache
 
 # In-memory avatar cache to avoid repeated DB reads
@@ -117,11 +118,11 @@ async def get_avatar(user_id: str):
     
     # Fetch ONLY avatar field
     try:
-        user = await asyncio.wait_for(
+        user = await _asyncio.wait_for(
             db.users.find_one({"id": user_id}, {"avatar": 1, "_id": 0}),
             timeout=10.0
         )
-    except asyncio.TimeoutError:
+    except _asyncio.TimeoutError:
         raise HTTPException(status_code=504, detail="DB timeout")
     
     if not user or not user.get("avatar"):
