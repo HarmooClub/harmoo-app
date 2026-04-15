@@ -582,6 +582,10 @@ async def register(user: UserCreate):
     """
     await send_email(user.email, "Vérifiez votre email - Harmoo", html)
     
+    # PERF: Replace base64 avatar with URL
+    if user_dict.get("avatar", "").startswith("data:image"):
+        user_dict["avatar"] = f"/api/avatar/{user_dict['id']}"
+    
     return Token(access_token=access_token, token_type="bearer", user=user_dict)
 
 @api_router.post("/auth/login", response_model=Token)
@@ -596,11 +600,18 @@ async def login(credentials: UserLogin):
     access_token = create_access_token(data={"sub": user["id"]})
     user_data = {k: v for k, v in user.items() if k != "hashed_password" and k != "_id"}
     
+    # PERF: Replace base64 avatar with URL to avoid sending MB of data
+    if user_data.get("avatar", "").startswith("data:image"):
+        user_data["avatar"] = f"/api/avatar/{user_data['id']}"
+    
     return Token(access_token=access_token, token_type="bearer", user=user_data)
 
 @api_router.get("/auth/me")
 async def get_me(current_user: dict = Depends(get_current_user)):
     user_data = {k: v for k, v in current_user.items() if k != "hashed_password" and k != "_id"}
+    # PERF: Replace base64 avatar with URL
+    if user_data.get("avatar", "").startswith("data:image"):
+        user_data["avatar"] = f"/api/avatar/{user_data['id']}"
     return user_data
 
 # ==================== EMAIL VERIFICATION ====================
