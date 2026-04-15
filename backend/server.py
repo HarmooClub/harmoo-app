@@ -822,17 +822,17 @@ async def get_freelancers(
             {"subcategories": {"$regex": search, "$options": "i"}}
         ]
     
-    freelancers_cursor = db.users.find(query).skip(skip).limit(limit * 3)
+    # PERF: Use projection to exclude heavy fields from list query
+    projection = {"hashed_password": 0, "_id": 0, "avatar": 0}
+    freelancers_cursor = db.users.find(query, projection).skip(skip).limit(limit * 3)
     freelancers = await freelancers_cursor.to_list(limit * 3)
     
     result = []
     for freelancer in freelancers:
-        freelancer_data = {k: v for k, v in freelancer.items() if k != "hashed_password" and k != "_id"}
+        freelancer_data = dict(freelancer)
         
-        # PERF: Replace base64 avatars with URL to avatar endpoint (reduces JSON from 7MB to ~10KB)
-        avatar = freelancer_data.get("avatar", "")
-        if avatar and avatar.startswith("data:image"):
-            freelancer_data["avatar"] = f"/api/avatar/{freelancer_data['id']}"
+        # PERF: Set avatar to URL endpoint instead of base64
+        freelancer_data["avatar"] = f"/api/avatar/{freelancer_data['id']}"
         
         if lat is not None and lng is not None and freelancer.get("location"):
             distance_km = calculate_distance(
