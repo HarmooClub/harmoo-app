@@ -931,22 +931,20 @@ async def get_freelancers(
 @api_router.get("/freelancers/{freelancer_id}")
 async def get_freelancer(freelancer_id: str):
     # Try to find by ID first, then by profile_slug
-    freelancer = await db.users.find_one({"id": freelancer_id, "user_type": "freelancer"})
+    # PERF: exclude heavy fields, use avatar endpoint + separate portfolio query
+    projection = {"avatar": 0, "portfolio": 0, "_id": 0, "hashed_password": 0}
+    freelancer = await db.users.find_one({"id": freelancer_id, "user_type": "freelancer"}, projection)
     if not freelancer:
-        freelancer = await db.users.find_one({"profile_slug": freelancer_id, "user_type": "freelancer"})
+        freelancer = await db.users.find_one({"profile_slug": freelancer_id, "user_type": "freelancer"}, projection)
     if not freelancer:
-        # Also check if is_provider_mode is true (for users who are freelancers)
-        freelancer = await db.users.find_one({"id": freelancer_id, "is_provider_mode": True})
+        freelancer = await db.users.find_one({"id": freelancer_id, "is_provider_mode": True}, projection)
     if not freelancer:
-        freelancer = await db.users.find_one({"profile_slug": freelancer_id, "is_provider_mode": True})
+        freelancer = await db.users.find_one({"profile_slug": freelancer_id, "is_provider_mode": True}, projection)
     if not freelancer:
         raise HTTPException(status_code=404, detail="Freelance non trouvé")
     
-    freelancer_data = {k: v for k, v in freelancer.items() if k != "hashed_password" and k != "_id"}
-    
-    # PERF: Replace base64 avatar with URL
-    if freelancer_data.get("avatar", "").startswith("data:image"):
-        freelancer_data["avatar"] = f"/api/avatar/{freelancer_data['id']}"
+    freelancer_data = dict(freelancer)
+    freelancer_data["avatar"] = f"/api/avatar/{freelancer_data['id']}"
     
     portfolio = await db.portfolio.find({"user_id": freelancer["id"]}).to_list(50)
     freelancer_data["portfolio"] = [{k: v for k, v in p.items() if k != "_id"} for p in portfolio]
