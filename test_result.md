@@ -96,7 +96,7 @@
 # END - Testing Protocol - DO NOT EDIT OR REMOVE THIS SECTION
 #====================================================================================================
 
-user_problem_statement: "9 critical modifications: messaging no auto-msg, new spectacle vivant category, self-like prevention, portfolio with media links, date format JJ/MM/AAAA, subscription commissions (15%/6%/0%), remove fake accounts, homepage larger cards, shareable profile link"
+user_problem_statement: "Fix RIB (bank details) addition on 'Caisse' page - save button doesn't work and doesn't save"
 
 backend:
   - task: "Self-like prevention on favorites endpoint"
@@ -104,17 +104,14 @@ backend:
     working: true
     file: "backend/server.py"
     stuck_count: 0
-    priority: "high"
+    priority: "low"
     needs_retesting: false
     status_history:
-        - working: "NA"
-        - agent: "main"
-        - comment: "Added check in POST /api/favorites/{id} that returns 400 if freelancer_id == current_user.id"
         - working: true
         - agent: "testing"
-        - comment: "✅ TESTED: Self-like prevention working correctly. POST /api/favorites/{own_user_id} returns 400 error as expected. Logged in as couturier@test.com and attempted to like own profile - correctly blocked."
+        - comment: "Previously tested and working"
 
-  - task: "New spectacle_vivant category in CATEGORIES_DATA"
+  - task: "Bank details route conflict fix (GET/PUT /api/users/bank-details)"
     implemented: true
     working: true
     file: "backend/server.py"
@@ -122,29 +119,14 @@ backend:
     priority: "high"
     needs_retesting: false
     status_history:
-        - working: "NA"
+        - working: false
         - agent: "main"
-        - comment: "Added spectacle_vivant with subcategories: danseur, stand-uppeur, comédien, etc."
+        - comment: "ROOT CAUSE FOUND: GET /api/users/bank-details was intercepted by GET /api/users/{user_id} (defined earlier in server.py). 'bank-details' was being treated as a user_id, returning 404. FIX: Moved BankDetailsUpdate model and both GET/PUT /api/users/bank-details endpoints BEFORE the /api/users/{user_id} route. Removed duplicate definitions at old location. Verified: curl GET /api/users/bank-details now returns 403 (Not authenticated) instead of 404 (Utilisateur non trouvé)."
         - working: true
         - agent: "testing"
-        - comment: "✅ TESTED: spectacle_vivant category exists with all expected subcategories: ['danseur', 'stand-uppeur', 'comédien', 'performance scénique', 'humoriste', 'metteur en scène', 'circassien', 'conteur']. GET /api/categories returns the category correctly."
+        - comment: "✅ ROUTE CONFLICT FIXED! Comprehensive testing completed: 1) Registered test user ribtest4@test.com successfully, 2) GET /api/users/bank-details with valid token returns {} (empty bank details) instead of 404 'Utilisateur non trouvé', 3) PUT /api/users/bank-details successfully saves bank details with message 'Coordonnées bancaires mises à jour', 4) GET /api/users/bank-details returns saved data with correct iban_masked (****0189), 5) GET /api/users/{user_id} still works correctly (route integrity maintained). Fixed minor bug in get_bank_details function where bank_details could be None. All critical endpoints working as expected."
 
-  - task: "Conversation open endpoint without auto-message"
-    implemented: true
-    working: true
-    file: "backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: "NA"
-        - agent: "main"
-        - comment: "New POST /api/conversations/open creates or gets conversation without sending message"
-        - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: Conversation open endpoint working correctly. POST /api/conversations/open creates conversation without auto-message. Verified that GET /api/messages/{conversation_id} returns empty list after conversation creation."
-
-  - task: "Profile slug generation and shareable link"
+  - task: "Bank details save endpoint (PUT /api/users/bank-details)"
     implemented: true
     working: true
     file: "backend/server.py"
@@ -154,85 +136,27 @@ backend:
     status_history:
         - working: "NA"
         - agent: "main"
-        - comment: "Slug generated on registration, GET /api/p/{slug} returns profile. Startup migration adds slugs to existing users."
+        - comment: "PUT endpoint validates IBAN length (15-34 chars), stores iban, bic, account_holder in user document. Was previously reachable (no route conflict for PUT) but GET was broken so the full flow failed."
         - working: true
         - agent: "testing"
-        - comment: "✅ TESTED: Profile slug generation working correctly. Registered new user 'Slug Test User' and received profile_slug in response. GET /api/p/{profile_slug} successfully returns the profile data. Shareable links functional."
-
-  - task: "Portfolio links fields (YouTube, Spotify, Instagram, TikTok)"
-    implemented: true
-    working: true
-    file: "backend/server.py"
-    stuck_count: 0
-    priority: "medium"
-    needs_retesting: false
-    status_history:
-        - working: "NA"
-        - agent: "main"
-        - comment: "PortfolioCreate and PortfolioItem models now have youtube_url, spotify_url, instagram_url, tiktok_url fields"
-        - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: Portfolio media links working correctly. Created portfolio item with youtube_url and instagram_url. GET /api/portfolio returns the item with correct media links preserved."
-
-  - task: "Commission rates updated (15%, 6%, 0%)"
-    implemented: true
-    working: true
-    file: "backend/server.py"
-    stuck_count: 0
-    priority: "medium"
-    needs_retesting: false
-    status_history:
-        - working: "NA"
-        - agent: "main"
-        - comment: "SUBSCRIPTION_PLANS and commission_rates updated: essentiel 15%, standard 6%, business 0%"
-        - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: Commission rates correct. GET /api/subscriptions/plans returns: essentiel 15%, standard 6%, business 0% commission rates as expected."
-
-  - task: "Exclude own profile from freelancers feed"
-    implemented: true
-    working: true
-    file: "backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: "NA"
-        - agent: "main"
-        - comment: "Added exclude_user_id parameter to GET /api/freelancers"
-        - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: Own profile exclusion working correctly. GET /api/freelancers?exclude_user_id={user_id} correctly excludes the logged-in user's profile from 12 results returned."
-
-  - task: "Delete all seeded/demo accounts on startup"
-    implemented: true
-    working: true
-    file: "backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: "NA"
-        - agent: "main"
-        - comment: "Startup migration deletes all users with is_seed=true and @harmoo-demo.fr emails"
-        - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: Seeded accounts cleanup working correctly. GET /api/freelancers returns 13 freelancers with no @harmoo-demo.fr email addresses found. Demo accounts successfully removed."
+        - comment: "✅ WORKING PERFECTLY! PUT /api/users/bank-details successfully saves bank details. Tested with IBAN: FR7630006000011234567890189, BIC: BNPAFRPP, account_holder: Jean Dupont. Returns correct success message 'Coordonnées bancaires mises à jour'. Data persists correctly and is retrievable with proper IBAN masking (****0189). Full bank details flow working end-to-end."
 
 metadata:
   created_by: "main_agent"
-  version: "2.0"
-  test_sequence: 2
+  version: "3.0"
+  test_sequence: 3
   run_ui: false
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Bank details route conflict fix (GET/PUT /api/users/bank-details)"
+    - "Bank details save endpoint (PUT /api/users/bank-details)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
     - agent: "main"
-    - message: "All 9 modifications implemented. Backend changes: 1) Self-like blocked on POST /api/favorites/{id}. 2) spectacle_vivant category added. 3) POST /api/conversations/open creates conversation without sending message. 4) Profile slug on registration + GET /api/p/{slug}. 5) Portfolio model has youtube/spotify/instagram/tiktok URL fields. 6) Commissions: essentiel 15%, standard 6%, business 0%. 7) exclude_user_id param on GET /api/freelancers. 8) Startup migration deletes seeded accounts. Test credentials: test@test.com / test123 (client), couturier@test.com / test123 (freelancer). Base URL: https://april-8-launch.preview.emergentagent.com/api"
+    - message: "Fixed critical route conflict bug. The GET /api/users/bank-details endpoint was being captured by GET /api/users/{user_id} (defined on line 829) because FastAPI matches routes in definition order. 'bank-details' was treated as a user_id. FIX: Moved bank details endpoints BEFORE the parameterized route. Please test: 1) Register a test user (POST /api/auth/register), 2) Login to get token, 3) GET /api/users/bank-details with token should return empty {}, 4) PUT /api/users/bank-details with iban/bic/account_holder should save, 5) GET /api/users/bank-details should now return saved data with iban_masked. Base URL: http://localhost:8001/api. Test user: any new registration or use existing test@test.com / test123"
     - agent: "testing"
-    - message: "✅ ALL BACKEND TESTS PASSED (12/12). Comprehensive testing completed for all 8 critical modifications: 1) Self-like prevention working (400 error), 2) spectacle_vivant category with all subcategories, 3) Conversation open without auto-message, 4) Profile slug generation and shareable links, 5) Portfolio media links (YouTube/Instagram), 6) Commission rates correct (15%/6%/0%), 7) Own profile exclusion from feed, 8) Seeded accounts cleanup. All endpoints functioning correctly with proper authentication and data validation. Backend implementation is complete and fully functional."
+    - message: "🎉 BANK DETAILS (RIB) API TESTING COMPLETE - ALL CRITICAL TESTS PASSED! ✅ Route conflict successfully fixed - GET /api/users/bank-details now returns {} instead of 404 'Utilisateur non trouvé' ✅ PUT /api/users/bank-details successfully saves bank details ✅ GET /api/users/bank-details returns saved data with correct IBAN masking (****0189) ✅ User profile endpoint /api/users/{user_id} still works correctly. Fixed 2 minor bugs during testing: 1) bank_details null handling in get_bank_details function, 2) avatar null handling in registration. Test user: ribtest4@test.com. The original user problem 'save button doesn't work and doesn't save' on Caisse page is now resolved at the API level."

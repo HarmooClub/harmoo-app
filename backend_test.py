@@ -1,21 +1,23 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for Harmoo Marketplace
-Tests all critical endpoints mentioned in the review request
+Backend API Testing for Bank Details (RIB) Endpoints
+Tests the critical flow for bank details API after route conflict fix
 """
 
 import requests
 import json
 import sys
 from typing import Dict, Any, Optional
+from datetime import datetime
 
 # Base URL for the API
 BASE_URL = "https://april-8-launch.preview.emergentagent.com/api"
 
-# Test credentials
+# Test credentials for bank details testing
 TEST_CREDENTIALS = {
     "client": {"email": "test@test.com", "password": "test123"},
-    "freelancer": {"email": "couturier@test.com", "password": "test123"}
+    "freelancer": {"email": "couturier@test.com", "password": "test123"},
+    "rib_test": {"email": "ribtest@test.com", "password": "test123", "full_name": "RIB Test User"}
 }
 
 class APITester:

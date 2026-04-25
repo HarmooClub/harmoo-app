@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Modal, TextInput, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, ActivityIndicator, RefreshControl, Modal, TextInput, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../src/contexts/ThemeContext';
 import { useAuth } from '../src/contexts/AuthContext';
@@ -46,14 +45,33 @@ export default function CashRegisterScreen() {
 
   const fetchAll = async () => {
     try {
-      const [cashRes, bankRes, withdrawRes] = await Promise.all([
-        api.get('/cash-register'),
-        bankApi.getBankDetails(),
-        bankApi.getWithdrawals(),
-      ]);
-      setData(cashRes.data);
-      setBankDetails(bankRes.data);
-      setWithdrawals(withdrawRes.data);
+      // Use individual try-catch to prevent one failure from blocking all data
+      let cashData = null, bankData = null, withdrawData: any[] = [];
+      
+      try {
+        const cashRes = await api.get('/cash-register');
+        cashData = cashRes.data;
+      } catch (e) {
+        console.warn('Failed to load cash register:', e);
+      }
+      
+      try {
+        const bankRes = await bankApi.getBankDetails();
+        bankData = bankRes.data;
+      } catch (e) {
+        console.warn('Failed to load bank details:', e);
+      }
+      
+      try {
+        const withdrawRes = await bankApi.getWithdrawals();
+        withdrawData = withdrawRes.data;
+      } catch (e) {
+        console.warn('Failed to load withdrawals:', e);
+      }
+      
+      setData(cashData);
+      setBankDetails(bankData);
+      setWithdrawals(withdrawData);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -110,15 +128,30 @@ export default function CashRegisterScreen() {
     }
     setIsSavingBank(true);
     try {
-      await bankApi.updateBankDetails({ iban, bic, account_holder: accountHolder });
+      await bankApi.updateBankDetails({ iban: iban.trim(), bic: bic.trim(), account_holder: accountHolder.trim() });
       Alert.alert('Succès', 'Coordonnées bancaires enregistrées');
       setShowBankModal(false);
       fetchAll();
     } catch (error: any) {
+      console.error('Bank save error:', error);
       Alert.alert('Erreur', error.response?.data?.detail || 'Erreur lors de l\'enregistrement');
     } finally {
       setIsSavingBank(false);
     }
+  };
+
+  const openBankModal = () => {
+    // Pre-populate form with existing bank details
+    if (bankDetails?.iban) {
+      setIban(bankDetails.iban);
+      setBic(bankDetails.bic || '');
+      setAccountHolder(bankDetails.account_holder || '');
+    } else {
+      setIban('');
+      setBic('');
+      setAccountHolder('');
+    }
+    setShowBankModal(true);
   };
 
   if (isLoading) {
@@ -178,7 +211,7 @@ export default function CashRegisterScreen() {
         <Card style={styles.bankCard} padding={spacing.lg}>
           <View style={styles.bankHeader}>
             <Text style={[typography.h3, { color: theme.title }]}>Coordonnées bancaires</Text>
-            <TouchableOpacity onPress={() => setShowBankModal(true)}>
+            <TouchableOpacity onPress={openBankModal}>
               <Ionicons name="create-outline" size={20} color={theme.primary} />
             </TouchableOpacity>
           </View>
@@ -194,7 +227,7 @@ export default function CashRegisterScreen() {
               </View>
             </View>
           ) : (
-            <TouchableOpacity style={[styles.addBankBtn, { borderColor: theme.primary }]} onPress={() => setShowBankModal(true)}>
+            <TouchableOpacity style={[styles.addBankBtn, { borderColor: theme.primary }]} onPress={openBankModal}>
               <Ionicons name="add-circle-outline" size={20} color={theme.primary} />
               <Text style={[typography.labelMedium, { color: theme.primary }]}>Ajouter un compte bancaire</Text>
             </TouchableOpacity>
@@ -258,45 +291,26 @@ export default function CashRegisterScreen() {
       {/* Withdraw Modal */}
       <Modal visible={showWithdrawModal} transparent animationType="fade" onRequestClose={() => setShowWithdrawModal(false)}>
         <View style={styles.glassOverlay}>
-          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setShowWithdrawModal(false)}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowWithdrawModal(false)}>
             <LinearGradient colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.32)']} locations={[0, 1]} style={StyleSheet.absoluteFill} />
-          </TouchableOpacity>
-          <View style={styles.glassModalContainer}>
+          </Pressable>
+          <View style={[styles.glassModalContainer, { zIndex: 10, elevation: 10 }]}>
             <LinearGradient colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.9)']} locations={[0, 1]} style={styles.glassFeatherTop} />
-            {Platform.OS !== 'web' ? (
-              <BlurView intensity={50} tint="light" style={styles.glassSheet}>
-                <View style={[styles.modalInner, { backgroundColor: 'rgba(255,255,255,0.88)' }]}>
-                  <Text style={[typography.h2, { color: theme.title, marginBottom: spacing.lg }]}>Retirer des fonds</Text>
-                  <Text style={[typography.bodySmall, { color: theme.textSecondary, marginBottom: spacing.lg }]}>
-                    Disponible: {(data?.available_amount || 0).toFixed(2)}€ • Min: 10€
-                  </Text>
-                  <TextInput
-                    style={[styles.amountInput, { backgroundColor: theme.background, color: theme.title, borderColor: theme.border }]}
-                    value={withdrawAmount}
-                    onChangeText={setWithdrawAmount}
-                    keyboardType="decimal-pad"
-                    placeholder="Montant en €"
-                    placeholderTextColor={theme.textSecondary}
-                  />
-                  <Button title="Retirer" onPress={handleWithdraw} isLoading={isWithdrawing} style={{ marginTop: spacing.xl }} />
-                </View>
-              </BlurView>
-            ) : (
-              <View style={[styles.modalInner, { backgroundColor: 'rgba(255,255,255,0.95)' }]}>
-                <Text style={[typography.h2, { color: theme.title, marginBottom: spacing.lg }]}>Retirer des fonds</Text>
-                <Text style={[typography.bodySmall, { color: theme.textSecondary, marginBottom: spacing.lg }]}>
-                  Disponible: {(data?.available_amount || 0).toFixed(2)}€ • Min: 10€
-                </Text>
-                <TextInput
-                  style={[styles.amountInput, { backgroundColor: theme.background, color: theme.title, borderColor: theme.border }]}
-                  value={withdrawAmount}
-                  onChangeText={setWithdrawAmount}
-                  placeholder="Montant en €"
-                  placeholderTextColor={theme.textSecondary}
-                />
-                <Button title="Retirer" onPress={handleWithdraw} isLoading={isWithdrawing} style={{ marginTop: spacing.xl }} />
-              </View>
-            )}
+            <Pressable onPress={(e) => e.stopPropagation()} style={[styles.modalInner, { backgroundColor: 'rgba(255,255,255,0.95)', borderTopLeftRadius: 28, borderTopRightRadius: 28 }]}>
+              <Text style={[typography.h2, { color: theme.title, marginBottom: spacing.lg }]}>Retirer des fonds</Text>
+              <Text style={[typography.bodySmall, { color: theme.textSecondary, marginBottom: spacing.lg }]}>
+                Disponible: {(data?.available_amount || 0).toFixed(2)}€ • Min: 10€
+              </Text>
+              <TextInput
+                style={[styles.amountInput, { backgroundColor: theme.background, color: theme.title, borderColor: theme.border }]}
+                value={withdrawAmount}
+                onChangeText={setWithdrawAmount}
+                keyboardType="decimal-pad"
+                placeholder="Montant en €"
+                placeholderTextColor={theme.textSecondary}
+              />
+              <Button title="Retirer" onPress={handleWithdraw} isLoading={isWithdrawing} style={{ marginTop: spacing.xl }} />
+            </Pressable>
           </View>
         </View>
       </Modal>
@@ -304,12 +318,12 @@ export default function CashRegisterScreen() {
       {/* Bank Details Modal */}
       <Modal visible={showBankModal} transparent animationType="fade" onRequestClose={() => setShowBankModal(false)}>
         <View style={styles.glassOverlay}>
-          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setShowBankModal(false)}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowBankModal(false)}>
             <LinearGradient colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.32)']} locations={[0, 1]} style={StyleSheet.absoluteFill} />
-          </TouchableOpacity>
-          <View style={styles.glassModalContainer}>
+          </Pressable>
+          <View style={[styles.glassModalContainer, { zIndex: 10, elevation: 10 }]}>
             <LinearGradient colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.9)']} locations={[0, 1]} style={styles.glassFeatherTop} />
-            <View style={[styles.modalInner, { backgroundColor: 'rgba(255,255,255,0.95)', borderTopLeftRadius: 28, borderTopRightRadius: 28 }]}>
+            <Pressable onPress={(e) => e.stopPropagation()} style={[styles.modalInner, { backgroundColor: 'rgba(255,255,255,0.95)', borderTopLeftRadius: 28, borderTopRightRadius: 28 }]}>
               <Text style={[typography.h2, { color: theme.title, marginBottom: spacing.xl }]}>Coordonnées bancaires</Text>
               
               <Text style={[typography.labelMedium, { color: theme.title, marginBottom: spacing.sm }]}>Titulaire du compte</Text>
@@ -342,7 +356,7 @@ export default function CashRegisterScreen() {
               />
               
               <Button title="Enregistrer" onPress={handleSaveBank} isLoading={isSavingBank} style={{ marginTop: spacing.xxl }} />
-            </View>
+            </Pressable>
           </View>
         </View>
       </Modal>

@@ -625,7 +625,8 @@ async def register(user: UserCreate):
     await send_email(user.email, "Vérifiez votre email - Harmoo", html)
     
     # PERF: Replace base64 avatar with URL
-    if user_dict.get("avatar", "").startswith("data:image"):
+    avatar = user_dict.get("avatar")
+    if avatar and avatar.startswith("data:image"):
         user_dict["avatar"] = f"/api/avatar/{user_dict['id']}"
     
     return Token(access_token=access_token, token_type="bearer", user=user_dict)
@@ -826,6 +827,58 @@ async def update_profile(
     user_data = {k: v for k, v in updated_user.items() if k != "hashed_password" and k != "_id"}
     return user_data
 
+# ==================== BANK DETAILS ENDPOINTS ====================
+# IMPORTANT: These MUST be defined BEFORE /users/{user_id} to avoid route conflicts
+
+class BankDetailsUpdate(BaseModel):
+    iban: str
+    bic: str
+    account_holder: str
+
+@api_router.put("/users/bank-details")
+async def update_bank_details(
+    details: BankDetailsUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update user's bank details for payouts"""
+    # Basic IBAN validation
+    iban = details.iban.replace(" ", "").upper()
+    if len(iban) < 15 or len(iban) > 34:
+        raise HTTPException(status_code=400, detail="IBAN invalide")
+    
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {
+            "bank_details": {
+                "iban": iban,
+                "bic": details.bic.upper(),
+                "account_holder": details.account_holder,
+                "updated_at": datetime.utcnow()
+            }
+        }}
+    )
+    
+    return {"message": "Coordonnées bancaires mises à jour"}
+
+@api_router.get("/users/bank-details")
+async def get_bank_details(current_user: dict = Depends(get_current_user)):
+    """Get user's bank details"""
+    user = await db.users.find_one(
+        {"id": current_user["id"]},
+        {"bank_details": 1, "_id": 0}
+    )
+    bank_details = user.get("bank_details") if user else None
+    if bank_details is None:
+        bank_details = {}
+    
+    # Mask IBAN for security (show only last 4 digits)
+    if bank_details.get("iban"):
+        iban = bank_details["iban"]
+        bank_details["iban_masked"] = "****" + iban[-4:]
+    
+    return bank_details
+
+# NOTE: This parameterized route MUST come AFTER all specific /users/* routes
 @api_router.get("/users/{user_id}")
 async def get_user(user_id: str):
     user = await db.users.find_one({"id": user_id})
@@ -1936,52 +1989,6 @@ async def get_cash_register(current_user: dict = Depends(get_current_user)):
         "pending_amount": pending_amount,
         "available_amount": available_amount
     }
-
-class BankDetailsUpdate(BaseModel):
-    iban: str
-    bic: str
-    account_holder: str
-
-@api_router.put("/users/bank-details")
-async def update_bank_details(
-    details: BankDetailsUpdate,
-    current_user: dict = Depends(get_current_user)
-):
-    """Update user's bank details for payouts"""
-    # Basic IBAN validation
-    iban = details.iban.replace(" ", "").upper()
-    if len(iban) < 15 or len(iban) > 34:
-        raise HTTPException(status_code=400, detail="IBAN invalide")
-    
-    await db.users.update_one(
-        {"id": current_user["id"]},
-        {"$set": {
-            "bank_details": {
-                "iban": iban,
-                "bic": details.bic.upper(),
-                "account_holder": details.account_holder,
-                "updated_at": datetime.utcnow()
-            }
-        }}
-    )
-    
-    return {"message": "Coordonnées bancaires mises à jour"}
-
-@api_router.get("/users/bank-details")
-async def get_bank_details(current_user: dict = Depends(get_current_user)):
-    """Get user's bank details"""
-    user = await db.users.find_one(
-        {"id": current_user["id"]},
-        {"bank_details": 1, "_id": 0}
-    )
-    bank_details = user.get("bank_details", {}) if user else {}
-    
-    # Mask IBAN for security (show only last 4 digits)
-    if bank_details.get("iban"):
-        iban = bank_details["iban"]
-        bank_details["iban_masked"] = "****" + iban[-4:]
-    
-    return bank_details
 
 class WithdrawalRequest(BaseModel):
     amount: float
