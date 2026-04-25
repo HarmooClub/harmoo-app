@@ -2865,7 +2865,35 @@ async def root():
 async def health_check():
     return {"status": "healthy", "database": "connected"}
 
-# Include the router in the main app
+# ==================== ADMIN: PASSWORD RESET (TEMP) ====================
+@api_router.post("/admin/reset-password")
+async def admin_reset_password(data: dict):
+    """Temporary admin endpoint to reset user password"""
+    admin_key = data.get("admin_key")
+    if admin_key != "harmoo-admin-2025":
+        raise HTTPException(status_code=403, detail="Unauthorized")
+    
+    email = data.get("email")
+    new_password = data.get("new_password")
+    
+    user = await db.users.find_one({"email": email})
+    if not user:
+        return {"error": f"User {email} not found"}
+    
+    hashed = get_password_hash(new_password)
+    await db.users.update_one({"id": user["id"]}, {"$set": {"hashed_password": hashed}})
+    return {"success": True, "message": f"Password reset for {email}"}
+
+@api_router.get("/admin/list-users")
+async def admin_list_users(admin_key: str = ""):
+    """Temporary admin endpoint to list all users"""
+    if admin_key != "harmoo-admin-2025":
+        raise HTTPException(status_code=403, detail="Unauthorized")
+    
+    users = await db.users.find({}, {"full_name": 1, "email": 1, "user_type": 1, "is_harmoo_club": 1, "created_at": 1, "_id": 0}).to_list(1000)
+    return {"total": len(users), "users": users}
+
+# Include the router in the main app - MUST be after all api_router routes
 app.include_router(api_router)
 
 app.add_middleware(
@@ -2898,36 +2926,6 @@ async def mark_seeded_profiles():
             slug = f"{base_slug}-{counter}"
             counter += 1
         await db.users.update_one({"id": u["id"]}, {"$set": {"profile_slug": slug}})
-
-# ==================== ADMIN: PASSWORD RESET (TEMP) ====================
-@api_router.post("/admin/reset-password")
-async def admin_reset_password(data: dict):
-    """Temporary admin endpoint to reset user password"""
-    admin_key = data.get("admin_key")
-    if admin_key != "harmoo-admin-2025":
-        raise HTTPException(status_code=403, detail="Unauthorized")
-    
-    email = data.get("email")
-    new_password = data.get("new_password")
-    
-    user = await db.users.find_one({"email": email})
-    if not user:
-        return {"error": f"User {email} not found"}
-    
-    hashed = get_password_hash(new_password)
-    await db.users.update_one({"id": user["id"]}, {"$set": {"hashed_password": hashed}})
-    return {"success": True, "message": f"Password reset for {email}"}
-
-@api_router.get("/admin/list-users")
-async def admin_list_users(admin_key: str = ""):
-    """Temporary admin endpoint to list all users"""
-    if admin_key != "harmoo-admin-2025":
-        raise HTTPException(status_code=403, detail="Unauthorized")
-    
-    users = await db.users.find({}, {"full_name": 1, "email": 1, "is_harmoo_club": 1, "_id": 0}).to_list(100)
-    return {"users": users, "total": len(users)}
-
-
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
