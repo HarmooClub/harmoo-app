@@ -931,8 +931,17 @@ async def get_freelancers(
 @api_router.get("/freelancers/{freelancer_id}")
 async def get_freelancer(freelancer_id: str):
     # Try to find by ID first, then by profile_slug
-    # PERF: exclude heavy fields, use avatar endpoint + separate portfolio query
-    projection = {"avatar": 0, "portfolio": 0, "_id": 0, "hashed_password": 0}
+    # PERF: INCLUSION projection - only fetch needed fields, skip ALL heavy data
+    projection = {
+        "_id": 0, "id": 1, "full_name": 1, "email": 1, "bio": 1,
+        "user_type": 1, "categories": 1, "subcategories": 1,
+        "hourly_rate": 1, "city": 1, "location": 1,
+        "is_available": 1, "is_provider_mode": 1,
+        "is_harmoo_club": 1, "club_joined_at": 1,
+        "rating": 1, "total_reviews": 1, "profile_slug": 1,
+        "organization": 1, "created_at": 1, "phone": 1,
+        "services": 1, "subscription_tier": 1,
+    }
     freelancer = await db.users.find_one({"id": freelancer_id, "user_type": "freelancer"}, projection)
     if not freelancer:
         freelancer = await db.users.find_one({"profile_slug": freelancer_id, "user_type": "freelancer"}, projection)
