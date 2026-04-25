@@ -128,9 +128,20 @@ export default function CashRegisterScreen() {
     }
     setIsSavingBank(true);
     try {
-      await bankApi.updateBankDetails({ iban: iban.trim(), bic: bic.trim(), account_holder: accountHolder.trim() });
-      Alert.alert('Succès', 'Coordonnées bancaires enregistrées');
+      const cleanIban = iban.trim().replace(/\s/g, '').toUpperCase();
+      const cleanBic = bic.trim().toUpperCase();
+      const cleanHolder = accountHolder.trim();
+      await bankApi.updateBankDetails({ iban: cleanIban, bic: cleanBic, account_holder: cleanHolder });
+      // Update state immediately so user sees their RIB right away
+      setBankDetails({
+        iban: cleanIban,
+        bic: cleanBic,
+        account_holder: cleanHolder,
+        iban_masked: '****' + cleanIban.slice(-4),
+      });
       setShowBankModal(false);
+      Alert.alert('Succès', 'Coordonnées bancaires enregistrées avec succès');
+      // Also refresh from server in background
       fetchAll();
     } catch (error: any) {
       console.error('Bank save error:', error);
@@ -211,19 +222,35 @@ export default function CashRegisterScreen() {
         <Card style={styles.bankCard} padding={spacing.lg}>
           <View style={styles.bankHeader}>
             <Text style={[typography.h3, { color: theme.title }]}>Coordonnées bancaires</Text>
-            <TouchableOpacity onPress={openBankModal}>
-              <Ionicons name="create-outline" size={20} color={theme.primary} />
-            </TouchableOpacity>
+            {bankDetails?.iban ? (
+              <TouchableOpacity onPress={openBankModal} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Text style={[typography.bodySmall, { color: theme.primary }]}>Modifier</Text>
+                <Ionicons name="create-outline" size={16} color={theme.primary} />
+              </TouchableOpacity>
+            ) : null}
           </View>
           {bankDetails?.iban ? (
-            <View style={styles.bankInfo}>
-              <View style={styles.bankRow}>
-                <Text style={[typography.bodySmall, { color: theme.textSecondary }]}>IBAN</Text>
-                <Text style={[typography.labelMedium, { color: theme.title }]}>{bankDetails.iban_masked}</Text>
+            <View>
+              {/* Success badge */}
+              <View style={[styles.ribBadge, { backgroundColor: '#ECFDF5' }]}>
+                <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+                <Text style={{ color: '#10B981', fontWeight: '600', fontSize: 13, marginLeft: 6 }}>RIB enregistré</Text>
               </View>
-              <View style={styles.bankRow}>
-                <Text style={[typography.bodySmall, { color: theme.textSecondary }]}>Titulaire</Text>
-                <Text style={[typography.labelMedium, { color: theme.title }]}>{bankDetails.account_holder}</Text>
+              <View style={[styles.ribContainer, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                <View style={styles.ribRow}>
+                  <Text style={[typography.bodySmall, { color: theme.textSecondary }]}>IBAN</Text>
+                  <Text style={[typography.labelMedium, { color: theme.title, letterSpacing: 1 }]}>{bankDetails.iban_masked || '****'}</Text>
+                </View>
+                <View style={[styles.ribDivider, { backgroundColor: theme.border }]} />
+                <View style={styles.ribRow}>
+                  <Text style={[typography.bodySmall, { color: theme.textSecondary }]}>BIC / SWIFT</Text>
+                  <Text style={[typography.labelMedium, { color: theme.title }]}>{bankDetails.bic || '—'}</Text>
+                </View>
+                <View style={[styles.ribDivider, { backgroundColor: theme.border }]} />
+                <View style={styles.ribRow}>
+                  <Text style={[typography.bodySmall, { color: theme.textSecondary }]}>Titulaire</Text>
+                  <Text style={[typography.labelMedium, { color: theme.title }]}>{bankDetails.account_holder}</Text>
+                </View>
               </View>
             </View>
           ) : (
@@ -386,6 +413,10 @@ const styles = StyleSheet.create({
   bankHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
   bankInfo: { gap: spacing.sm },
   bankRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  ribBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, marginBottom: 12 },
+  ribContainer: { borderWidth: 1, borderRadius: 12, padding: 16 },
+  ribRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
+  ribDivider: { height: 1 },
   addBankBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, paddingVertical: spacing.lg, borderWidth: 1.5, borderRadius: radius.md, borderStyle: 'dashed' },
   infoCard: { marginBottom: spacing.xl },
   emptyHistory: { alignItems: 'center', paddingVertical: spacing.xxl },
