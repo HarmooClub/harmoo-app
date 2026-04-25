@@ -1970,8 +1970,11 @@ async def update_bank_details(
 @api_router.get("/users/bank-details")
 async def get_bank_details(current_user: dict = Depends(get_current_user)):
     """Get user's bank details"""
-    user = await db.users.find_one({"id": current_user["id"]})
-    bank_details = user.get("bank_details", {})
+    user = await db.users.find_one(
+        {"id": current_user["id"]},
+        {"bank_details": 1, "_id": 0}
+    )
+    bank_details = user.get("bank_details", {}) if user else {}
     
     # Mask IBAN for security (show only last 4 digits)
     if bank_details.get("iban"):
