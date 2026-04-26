@@ -238,7 +238,6 @@ export default function ProfileScreen() {
             <Text style={[typography.labelMedium, { color: theme.textSecondary, paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.sm }]}>
               ESPACE ARTISTE-ENTREPRENEUR
             </Text>
-            <MenuItem icon="analytics-outline" label="Tableau de bord" onPress={() => router.push('/dashboard')} theme={theme} />
             <MenuItem icon="eye-outline" label="Voir mon profil public" onPress={() => router.push(`/freelancer/${user.id}`)} theme={theme} />
             <MenuItem icon="construct-outline" label="Mes services" onPress={() => router.push('/my-services')} theme={theme} />
             <MenuItem icon="images-outline" label="Mon portfolio" onPress={() => router.push('/my-portfolio')} theme={theme} />
