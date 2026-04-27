@@ -256,7 +256,7 @@ CONTEST_CONFIG = {
     "name": "Concours du Cercle",
     "start": "2025-05-10T00:00:00",
     "end": "2025-05-17T23:59:59",
-    "message": "Participer au 1er concours du Cercle et transforme tes idées en projet concret en 3 semaines avec une équipe motivée et compétente."
+    "message": "Participer au 1er concours du Cercle et transforme tes idées en projet concret en 3 semaines avec une équipe motivée et compétente.\n\n👉 Soumettre mon profil : https://harmooclub.com/contest"
 }
 
 # ==================== MODELS ====================
