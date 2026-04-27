@@ -248,6 +248,17 @@ SERVICE_LIMITS = {
     "business": 3
 }
 
+# Harmoo Club admin account (platform's own services - 100% revenue to platform)
+HARMOO_ADMIN_EMAIL = "harmoo.app@gmail.com"
+
+# Contest configuration
+CONTEST_CONFIG = {
+    "name": "Concours du Cercle",
+    "start": "2025-05-10T00:00:00",
+    "end": "2025-05-17T23:59:59",
+    "message": "Participer au 1er concours du Cercle et transforme tes idées en projet concret en 3 semaines avec une équipe motivée et compétente."
+}
+
 # ==================== MODELS ====================
 
 class ServiceOption(BaseModel):
@@ -597,6 +608,31 @@ async def register(user: UserCreate):
     access_token = create_access_token(data={"sub": user_profile.id})
     del user_dict["hashed_password"]
     user_dict.pop("_id", None)
+    
+    # Auto-send contest invitation from Harmoo Club
+    try:
+        harmoo_admin = await db.users.find_one({"email": HARMOO_ADMIN_EMAIL}, {"id": 1})
+        if harmoo_admin:
+            participants = sorted([harmoo_admin["id"], user_profile.id])
+            conv = await db.conversations.find_one({"participants": participants})
+            if not conv:
+                conv = Conversation(participants=participants)
+                await db.conversations.insert_one(conv.dict())
+                conv = conv.dict()
+            
+            contest_msg = Message(
+                conversation_id=conv["id"],
+                sender_id=harmoo_admin["id"],
+                receiver_id=user_profile.id,
+                content=CONTEST_CONFIG["message"]
+            )
+            await db.messages.insert_one(contest_msg.dict())
+            await db.conversations.update_one(
+                {"id": conv["id"]},
+                {"$set": {"last_message": CONTEST_CONFIG["message"], "last_message_time": datetime.utcnow()}}
+            )
+    except Exception as e:
+        logger.error(f"Failed to send contest message: {e}")
     
     # Send email verification code
     code = generate_verification_code()
@@ -1077,15 +1113,18 @@ async def create_service(
     if current_user["user_type"] != "freelancer":
         raise HTTPException(status_code=403, detail="Seuls les freelances peuvent créer des services")
     
-    tier = current_user.get("subscription_tier", "essentiel")
-    max_services = SERVICE_LIMITS.get(tier, 1)
-    
-    existing_services = await db.services.count_documents({"freelancer_id": current_user["id"], "is_active": True})
-    if existing_services >= max_services:
-        raise HTTPException(
-            status_code=403, 
-            detail=f"Limite de services atteinte ({max_services}) pour l'abonnement {tier}. Passez à un abonnement supérieur."
-        )
+    # Harmoo Club admin has unlimited services
+    is_admin = current_user.get("email") == HARMOO_ADMIN_EMAIL
+    if not is_admin:
+        tier = current_user.get("subscription_tier", "essentiel")
+        max_services = SERVICE_LIMITS.get(tier, 1)
+        
+        existing_services = await db.services.count_documents({"freelancer_id": current_user["id"], "is_active": True})
+        if existing_services >= max_services:
+            raise HTTPException(
+                status_code=403, 
+                detail=f"Limite de services atteinte ({max_services}) pour l'abonnement {tier}. Passez à un abonnement supérieur."
+            )
     
     # Convert options
     options = [ServiceOption(**opt.dict()) for opt in service.options]
@@ -1335,12 +1374,17 @@ async def process_payment(
     tier = freelancer.get("subscription_tier", "essentiel")
     commission_rates = {"essentiel": 0.15, "standard": 0.06, "business": 0.0}
     
+    # Harmoo Club admin: 100% revenue goes to platform
+    if freelancer.get("email") == HARMOO_ADMIN_EMAIL:
+        commission = booking["total_price"]
+        freelancer_amount = 0.0
     # Harmoo Club members are exempt from all commissions
-    if freelancer.get("is_harmoo_club"):
+    elif freelancer.get("is_harmoo_club"):
         commission = 0.0
+        freelancer_amount = booking["total_price"]
     else:
         commission = booking["total_price"] * commission_rates.get(tier, 0.15)
-    freelancer_amount = booking["total_price"] - commission
+        freelancer_amount = booking["total_price"] - commission
     
     await db.bookings.update_one(
         {"id": booking_id},
@@ -2171,6 +2215,77 @@ async def get_messages(
     
     return [{k: v for k, v in m.items() if k != "_id"} for m in messages]
 
+# ==================== UNREAD MESSAGES COUNT (FOR BADGE) ====================
+@api_router.get("/messages/unread/count")
+async def get_unread_count(current_user: dict = Depends(get_current_user)):
+    """Total unread messages for notification badge"""
+    count = await db.messages.count_documents({
+        "receiver_id": current_user["id"],
+        "is_read": False
+    })
+    return {"unread_count": count}
+
+# ==================== CONTEST ENDPOINTS ====================
+@api_router.post("/contest/submit")
+async def submit_contest(current_user: dict = Depends(get_current_user)):
+    """Submit profile to contest (waiting list)"""
+    from datetime import timezone
+    now = datetime.utcnow()
+    start = datetime.fromisoformat(CONTEST_CONFIG["start"])
+    end = datetime.fromisoformat(CONTEST_CONFIG["end"])
+    
+    if now < start:
+        raise HTTPException(status_code=400, detail="Les candidatures ne sont pas encore ouvertes (10 mai)")
+    if now > end:
+        raise HTTPException(status_code=400, detail="Les candidatures sont fermées (17 mai)")
+    
+    # Check if already submitted
+    existing = await db.contest_submissions.find_one({"user_id": current_user["id"]})
+    if existing:
+        raise HTTPException(status_code=400, detail="Vous avez déjà soumis votre candidature")
+    
+    submission = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "full_name": current_user.get("full_name"),
+        "email": current_user.get("email"),
+        "user_type": current_user.get("user_type"),
+        "categories": current_user.get("categories", []),
+        "subcategories": current_user.get("subcategories", []),
+        "status": "waiting_list",
+        "submitted_at": datetime.utcnow()
+    }
+    await db.contest_submissions.insert_one(submission)
+    return {"message": "Candidature soumise ! Vous êtes sur la liste d'attente.", "status": "waiting_list"}
+
+@api_router.get("/contest/status")
+async def get_contest_status(current_user: dict = Depends(get_current_user)):
+    """Check if user has already submitted to the contest"""
+    submission = await db.contest_submissions.find_one({"user_id": current_user["id"]})
+    now = datetime.utcnow()
+    start = datetime.fromisoformat(CONTEST_CONFIG["start"])
+    end = datetime.fromisoformat(CONTEST_CONFIG["end"])
+    
+    return {
+        "submitted": submission is not None,
+        "status": submission.get("status") if submission else None,
+        "contest_open": start <= now <= end,
+        "contest_start": CONTEST_CONFIG["start"],
+        "contest_end": CONTEST_CONFIG["end"]
+    }
+
+@api_router.get("/contest/candidates")
+async def get_contest_candidates(current_user: dict = Depends(get_current_user)):
+    """Get all contest candidates - Admin only (Harmoo Club)"""
+    if current_user.get("email") != HARMOO_ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Accès réservé à l'administrateur")
+    
+    candidates = await db.contest_submissions.find({}).sort("submitted_at", -1).to_list(500)
+    return {
+        "total": len(candidates),
+        "candidates": [{k: v for k, v in c.items() if k != "_id"} for c in candidates]
+    }
+
 @api_router.delete("/messages/{message_id}")
 async def delete_message(
     message_id: str,
@@ -2892,6 +3007,53 @@ async def admin_list_users(admin_key: str = ""):
     
     users = await db.users.find({}, {"full_name": 1, "email": 1, "user_type": 1, "is_harmoo_club": 1, "created_at": 1, "_id": 0}).to_list(1000)
     return {"total": len(users), "users": users}
+
+@api_router.post("/admin/send-contest-to-all")
+async def send_contest_to_all(admin_key: str = ""):
+    """Send contest message from Harmoo Club to all existing users who haven't received it"""
+    if admin_key != "harmoo-admin-2025":
+        raise HTTPException(status_code=403, detail="Unauthorized")
+    
+    harmoo_admin = await db.users.find_one({"email": HARMOO_ADMIN_EMAIL}, {"id": 1})
+    if not harmoo_admin:
+        raise HTTPException(status_code=404, detail="Compte Harmoo Club introuvable")
+    
+    all_users = await db.users.find({"email": {"$ne": HARMOO_ADMIN_EMAIL}}, {"id": 1}).to_list(1000)
+    sent_count = 0
+    
+    for user in all_users:
+        participants = sorted([harmoo_admin["id"], user["id"]])
+        conv = await db.conversations.find_one({"participants": participants})
+        
+        # Check if contest message was already sent
+        if conv:
+            already_sent = await db.messages.find_one({
+                "conversation_id": conv["id"],
+                "sender_id": harmoo_admin["id"],
+                "content": CONTEST_CONFIG["message"]
+            })
+            if already_sent:
+                continue
+        
+        if not conv:
+            conv = Conversation(participants=participants)
+            await db.conversations.insert_one(conv.dict())
+            conv = conv.dict()
+        
+        msg = Message(
+            conversation_id=conv["id"],
+            sender_id=harmoo_admin["id"],
+            receiver_id=user["id"],
+            content=CONTEST_CONFIG["message"]
+        )
+        await db.messages.insert_one(msg.dict())
+        await db.conversations.update_one(
+            {"id": conv["id"]},
+            {"$set": {"last_message": CONTEST_CONFIG["message"], "last_message_time": datetime.utcnow()}}
+        )
+        sent_count += 1
+    
+    return {"message": f"Message envoyé à {sent_count} utilisateurs", "sent": sent_count}
 
 # Include the router in the main app - MUST be after all api_router routes
 app.include_router(api_router)

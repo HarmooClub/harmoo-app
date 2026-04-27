@@ -246,6 +246,16 @@ export default function ProfileScreen() {
           </Card>
         )}
 
+        {/* Admin: Contest Management (Harmoo Club only) */}
+        {user?.email === 'harmoo.app@gmail.com' && (
+          <Card style={styles.sectionCard}>
+            <Text style={[typography.labelMedium, { color: theme.textSecondary, paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.sm }]}>
+              ADMINISTRATION
+            </Text>
+            <MenuItem icon="trophy-outline" label="Concours du Cercle" onPress={() => router.push('/contest-candidates')} theme={theme} last />
+          </Card>
+        )}
+
         {/* Account Section */}
         <Card style={styles.sectionCard}>
           <Text style={[typography.labelMedium, { color: theme.textSecondary, paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.sm }]}>
