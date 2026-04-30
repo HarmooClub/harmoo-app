@@ -9,7 +9,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../src/contexts/ThemeContext';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { Avatar, getAvatarUrl } from '../../src/components/Avatar';
+import { Avatar } from '../../src/components/Avatar';
 import { Badge } from '../../src/components/Badge';
 import { Card } from '../../src/components/Card';
 import { spacing, typography, radius, shadows } from '../../src/theme';
@@ -109,6 +109,12 @@ export default function ProfileScreen() {
   }
 
   const isProvider = user.is_provider_mode === true;
+  const [localAvatar, setLocalAvatar] = useState<string | null>(null);
+
+  // Reset localAvatar when user.avatar changes from server
+  useEffect(() => {
+    setLocalAvatar(null);
+  }, [user?.avatar]);
 
   const toggleProviderMode = async () => {
     if (!user || isTogglingMode) return;
@@ -152,10 +158,19 @@ export default function ProfileScreen() {
       });
 
       if (!result.canceled && result.assets[0]) {
-        setIsUploadingAvatar(true);
         const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
-        await updateUser({ avatar: base64Image });
-        setIsUploadingAvatar(false);
+        // Instant visual update (optimistic)
+        setLocalAvatar(base64Image);
+        setIsUploadingAvatar(true);
+        try {
+          await updateUser({ avatar: base64Image });
+        } catch {
+          // Revert on failure
+          setLocalAvatar(null);
+          Alert.alert('Erreur', 'Impossible de changer la photo');
+        } finally {
+          setIsUploadingAvatar(false);
+        }
       }
     } catch (error) {
       setIsUploadingAvatar(false);
@@ -163,7 +178,7 @@ export default function ProfileScreen() {
     }
   };
 
-  const avatarUrl = getAvatarUrl(user.avatar, user.full_name);
+  const displayAvatar = localAvatar || user.avatar;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
@@ -171,7 +186,7 @@ export default function ProfileScreen() {
         {/* Profile Header */}
         <View style={styles.profileHeaderSection}>
           <Avatar
-            uri={user.avatar}
+            uri={displayAvatar}
             name={user.full_name}
             size={96}
             borderRadius={32}
