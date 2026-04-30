@@ -8,7 +8,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../src/contexts/ThemeContext';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { freelancersApi, favoritesApi, messagesApi, reviewsApi } from '../../src/services/api';
+import { freelancersApi, favoritesApi, reviewsApi } from '../../src/services/api';
 import { Avatar, getAvatarUrl } from '../../src/components/Avatar';
 import { Badge } from '../../src/components/Badge';
 import { Card } from '../../src/components/Card';
@@ -86,15 +86,6 @@ export default function FreelancerDetailScreen() {
         url: shareUrl,
         title: `${freelancer.full_name} - Harmoo`,
       });
-    } catch (error) { console.error(error); }
-  };
-
-  const startConversation = async () => {
-    if (!user) { router.push('/(auth)/login'); return; }
-    try {
-      // Open or create conversation WITHOUT sending any automatic message
-      const res = await messagesApi.openConversation(freelancer.id);
-      router.push({ pathname: '/chat/[conversationId]', params: { conversationId: res.data.id, name: freelancer.full_name, avatar: freelancer.avatar || '', receiverId: freelancer.id } });
     } catch (error) { console.error(error); }
   };
 
@@ -405,12 +396,8 @@ export default function FreelancerDetailScreen() {
       {/* Fixed Bottom Bar — hide for own profile */}
       {user?.id !== freelancer?.id && (
       <View style={[styles.bottomBar, { backgroundColor: theme.card, borderTopColor: theme.divider }]}>
-        <TouchableOpacity style={[styles.messageBtn, { borderColor: theme.primary }]} onPress={startConversation}>
-          <Ionicons name="chatbubble-outline" size={18} color={theme.primary} />
-          <Text style={[typography.labelLarge, { color: theme.primary, marginLeft: spacing.sm }]}>Message</Text>
-        </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.bookBtn, { backgroundColor: theme.primary }]}
+          style={[styles.bookBtn, { backgroundColor: theme.primary, flex: 1 }]}
           onPress={() => {
             if (freelancer.services?.length > 0) {
               router.push({ pathname: '/booking/[serviceId]', params: { serviceId: freelancer.services[0].id } });

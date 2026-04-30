@@ -150,21 +150,6 @@ export const cashRegisterApi = {
   getCashRegister: () => api.get('/cash-register'),
 };
 
-// Messages API
-export const messagesApi = {
-  getConversations: () => api.get('/conversations'),
-  getMessages: (conversationId: string, skip?: number, limit?: number) =>
-    api.get(`/messages/${conversationId}`, { params: { skip, limit } }),
-  sendMessage: (data: { receiver_id: string; content: string; file_url?: string; file_name?: string }) =>
-    api.post('/messages', data),
-  openConversation: (receiverId: string) =>
-    api.post('/conversations/open', { receiver_id: receiverId }),
-  deleteMessage: (messageId: string) =>
-    api.delete(`/messages/${messageId}`),
-  deleteConversation: (conversationId: string) =>
-    api.delete(`/conversations/${conversationId}`),
-};
-
 // Favorites API
 export const favoritesApi = {
   getFavorites: () => api.get('/favorites'),
