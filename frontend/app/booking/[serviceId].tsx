@@ -369,17 +369,9 @@ export default function BookingScreen() {
                 <Text style={[typography.displaySmall, { color: theme.primary }]}>{service.price}€</Text>
               </View>
               
-              {freelancer && (
-                <View style={[styles.freelancerEarnings, { backgroundColor: theme.successSoft }]}>
-                  <Ionicons name="wallet-outline" size={16} color={theme.success} />
-                  <Text style={[typography.caption, { color: theme.success, flex: 1 }]}>
-                    Le prestataire recevra {(service.price * (1 - getCommissionRate(freelancer.subscription_tier || 'essentiel'))).toFixed(2)}€
-                  </Text>
-                </View>
-              )}
             </Card>
 
-            {/* Payment Method (Mock) */}
+            {/* Payment Method */}
             <Card style={styles.sectionCard} padding={spacing.lg}>
               <Text style={[typography.h3, { color: theme.title, marginBottom: spacing.lg }]}>Mode de paiement</Text>
               
@@ -393,13 +385,6 @@ export default function BookingScreen() {
                 </View>
                 <Ionicons name="checkmark-circle" size={22} color={theme.primary} />
               </TouchableOpacity>
-
-              <View style={[styles.mockBanner, { backgroundColor: theme.warningSoft }]}>
-                <Ionicons name="information-circle-outline" size={16} color={theme.warning} />
-                <Text style={[typography.caption, { color: theme.warning, flex: 1 }]}>
-                  Paiement simulé pour la démo
-                </Text>
-              </View>
             </Card>
 
             {/* Security badges */}
