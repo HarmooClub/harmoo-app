@@ -242,6 +242,13 @@ export default function DiscoverScreen() {
           </View>
         )}
 
+        {/* Verified badge for Harmoo Club admin */}
+        {item.email === 'harmoo.app@gmail.com' && (
+          <View style={styles.cardVerifiedBadge}>
+            <Ionicons name="checkmark-circle" size={20} color="#1DA1F2" />
+          </View>
+        )}
+
         {/* Gradient overlay at bottom with info */}
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.65)']}
@@ -523,6 +530,15 @@ const styles = StyleSheet.create({
     top: 8,
     left: 8,
     zIndex: 10,
+  },
+  cardVerifiedBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 2,
+    zIndex: 11,
   },
   // Gradient overlay at the bottom of the card
   cardOverlay: {

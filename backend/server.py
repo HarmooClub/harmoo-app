@@ -971,11 +971,11 @@ async def get_freelancers(
             freelancer_data["travel_minutes"] = None
             result.append(freelancer_data)
     
-    # Sort by distance (closest first), then by rating
+    # Sort: pin Harmoo Club first, then by distance/rating
     if lat is not None and lng is not None:
-        result.sort(key=lambda x: (x.get("travel_minutes") or 9999, -(x.get("rating") or 0)))
+        result.sort(key=lambda x: (0 if x.get("email") == HARMOO_ADMIN_EMAIL else 1, x.get("travel_minutes") or 9999, -(x.get("rating") or 0)))
     else:
-        result.sort(key=lambda x: -(x.get("rating") or 0))
+        result.sort(key=lambda x: (0 if x.get("email") == HARMOO_ADMIN_EMAIL else 1, -(x.get("rating") or 0)))
     
     return result[:limit]
 
