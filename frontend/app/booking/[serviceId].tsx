@@ -335,8 +335,8 @@ export default function BookingScreen() {
                   <Text style={[typography.h4, { color: theme.title }]}>{service.price}€</Text>
                 </View>
                 
-                {/* Commission info */}
-                {freelancer && (
+                {/* Commission info - hidden for Harmoo Club (platform account) */}
+                {freelancer && freelancer.email !== 'harmoo.app@gmail.com' && (
                   <View style={styles.summaryRow}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
                       <Text style={[typography.bodySmall, { color: theme.textSecondary }]}>Commission Harmoo</Text>
@@ -354,7 +354,7 @@ export default function BookingScreen() {
                   </View>
                 )}
                 
-                {freelancer && getCommissionRate(freelancer.subscription_tier || 'essentiel') > 0 && (
+                {freelancer && freelancer.email !== 'harmoo.app@gmail.com' && getCommissionRate(freelancer.subscription_tier || 'essentiel') > 0 && (
                   <View style={[styles.commissionNote, { backgroundColor: theme.infoSoft || theme.primarySoft }]}>
                     <Ionicons name="information-circle-outline" size={14} color={theme.info || theme.primary} />
                     <Text style={[typography.tiny, { color: theme.info || theme.primary, flex: 1 }]}>
