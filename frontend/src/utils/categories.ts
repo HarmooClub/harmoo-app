@@ -6,7 +6,6 @@ export const CATEGORY_NAMES: Record<string, string> = {
   design: 'Arts graphiques',
   fashion: 'Mode',
   event: 'Événementiel',
-  architecture: 'Architecture',
   writing: 'Rédaction',
   content: 'Création de contenu',
   artisanal: 'Créations artisanales',
@@ -21,7 +20,6 @@ export const CATEGORY_ICONS: Record<string, string> = {
   design: 'color-palette',
   fashion: 'shirt',
   event: 'calendar',
-  architecture: 'business',
   writing: 'document-text',
   content: 'megaphone',
   artisanal: 'color-wand',
@@ -50,7 +48,6 @@ export const CATEGORY_SUBCATEGORIES: Record<string, string[]> = {
     'technicien son lumière', 'responsable sécurité', 'responsable sponsoring',
     'décorateur', 'responsable logistique', 'traiteur'
   ],
-  architecture: ['dessinateur', 'architecte d\'intérieur', 'urbaniste', 'paysagiste'],
   writing: ['scénariste', 'correcteur', 'éditeur', 'auteur fantôme', 'écrivain/auteur', 'relecteur'],
   content: [
     'gestionnaire de communauté', 'influenceur', 'créateur de contenu', 'rédacteur publicitaire',

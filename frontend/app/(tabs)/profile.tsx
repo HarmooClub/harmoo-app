@@ -56,10 +56,10 @@ export default function ProfileScreen() {
 
   const switchToAccount = async (acct: SavedAccount) => {
     setIsSwitching(true);
+    setShowSwitcher(false);
     try {
-      await logout();
+      // Login directly without logout to avoid null user state
       await login(acct.email, acct.password);
-      setShowSwitcher(false);
       router.replace('/(tabs)');
     } catch {
       if (Platform.OS === 'web') window.alert('Impossible de se connecter');

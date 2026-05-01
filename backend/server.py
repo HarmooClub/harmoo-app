@@ -196,11 +196,6 @@ CATEGORIES_DATA = {
             "décorateur", "responsable logistique", "traiteur"
         ]
     },
-    "architecture": {
-        "name": "Architecture",
-        "icon": "business",
-        "subcategories": ["dessinateur", "architecte d'intérieur", "urbaniste", "paysagiste"]
-    },
     "writing": {
         "name": "Rédaction",
         "icon": "document-text",
@@ -2665,7 +2660,6 @@ async def seed_fake_profiles():
                     "design": ["Création logo", "Identité visuelle", "Design print"],
                     "fashion": ["Création sur mesure", "Conseil en image", "Stylisme événement"],
                     "event": ["Organisation événement", "Décoration", "Animation"],
-                    "architecture": ["Design d'intérieur", "Plans et esquisses", "Aménagement"],
                     "writing": ["Rédaction contenu", "Correction textes", "Scénario"],
                     "content": ["Gestion réseaux sociaux", "Création de contenu", "Stratégie digitale"],
                     "artisanal": ["Création sur mesure", "Pièce artisanale unique", "Collection capsule"]
