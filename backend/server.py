@@ -95,7 +95,7 @@ from functools import lru_cache
 # In-memory avatar cache to avoid repeated DB reads
 _avatar_cache: dict = {}
 _avatar_cache_ttl: dict = {}
-AVATAR_CACHE_DURATION = 3600  # 1 hour
+AVATAR_CACHE_DURATION = 300  # 5 min (short to reflect profile changes quickly)
 
 @api_router.get("/avatar/{user_id}")
 async def get_avatar(user_id: str):
@@ -111,7 +111,7 @@ async def get_avatar(user_id: str):
             content=cached["bytes"],
             media_type=cached["mime"],
             headers={
-                "Cache-Control": "public, max-age=86400, s-maxage=604800",
+                "Cache-Control": "public, max-age=300",
                 "X-Cache": "HIT",
             }
         )
@@ -142,7 +142,7 @@ async def get_avatar(user_id: str):
             content=image_bytes,
             media_type=mime_type,
             headers={
-                "Cache-Control": "public, max-age=86400, s-maxage=604800",
+                "Cache-Control": "public, max-age=300",
                 "X-Cache": "MISS",
             }
         )
@@ -820,6 +820,10 @@ async def update_profile(
             {"id": current_user["id"]},
             {"$set": update_data}
         )
+        # Purge avatar cache if avatar was updated
+        if "avatar" in update_data:
+            _avatar_cache.pop(current_user["id"], None)
+            _avatar_cache_ttl.pop(current_user["id"], None)
     
     updated_user = await db.users.find_one({"id": current_user["id"]})
     user_data = {k: v for k, v in updated_user.items() if k != "hashed_password" and k != "_id"}

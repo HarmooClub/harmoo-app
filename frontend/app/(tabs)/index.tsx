@@ -213,9 +213,10 @@ export default function DiscoverScreen() {
             source={{ uri: avatarUrl }}
             style={StyleSheet.absoluteFillObject}
             contentFit="cover"
-            transition={300}
-            cachePolicy="memory-disk"
-            recyclingKey={item.id}
+            transition={200}
+            cachePolicy="memory"
+            recyclingKey={`${item.id}-${item.updated_at || ''}`}
+            priority={index < 4 ? 'high' : 'low'}
           />
         ) : (
           <View style={[StyleSheet.absoluteFillObject, { backgroundColor: getPlaceholderColor(item.full_name) + '25' }]}>
