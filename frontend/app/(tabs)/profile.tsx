@@ -90,6 +90,14 @@ export default function ProfileScreen() {
     router.replace('/(auth)/welcome');
   };
 
+  const isProvider = user?.is_provider_mode === true;
+  const [localAvatar, setLocalAvatar] = useState<string | null>(null);
+
+  // Reset localAvatar when user.avatar changes from server
+  useEffect(() => {
+    setLocalAvatar(null);
+  }, [user?.avatar]);
+
   if (!user) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
@@ -107,14 +115,6 @@ export default function ProfileScreen() {
       </SafeAreaView>
     );
   }
-
-  const isProvider = user.is_provider_mode === true;
-  const [localAvatar, setLocalAvatar] = useState<string | null>(null);
-
-  // Reset localAvatar when user.avatar changes from server
-  useEffect(() => {
-    setLocalAvatar(null);
-  }, [user?.avatar]);
 
   const toggleProviderMode = async () => {
     if (!user || isTogglingMode) return;
