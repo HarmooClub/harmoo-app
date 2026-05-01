@@ -211,7 +211,7 @@ CATEGORIES_DATA = {
         "icon": "megaphone",
         "subcategories": [
             "gestionnaire de communauté", "influenceur", "créateur de contenu", "rédacteur publicitaire",
-            "vidéaste YouTube", "podcasteur", "blogueur", "gestionnaire de réseaux sociaux"
+            "vidéaste YouTube", "podcasteur", "blogueur", "gestionnaire de réseaux sociaux", "studio d'enregistrement"
         ]
     },
     "artisanal": {
