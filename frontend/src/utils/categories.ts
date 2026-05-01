@@ -54,7 +54,7 @@ export const CATEGORY_SUBCATEGORIES: Record<string, string[]> = {
   writing: ['scénariste', 'correcteur', 'éditeur', 'auteur fantôme', 'écrivain/auteur', 'relecteur'],
   content: [
     'gestionnaire de communauté', 'influenceur', 'créateur de contenu', 'rédacteur publicitaire',
-    'vidéaste YouTube', 'podcasteur', 'blogueur', 'gestionnaire de réseaux sociaux'
+    'vidéaste YouTube', 'podcasteur', 'blogueur', 'gestionnaire de réseaux sociaux', "studio d'enregistrement"
   ],
   artisanal: [
     'bijoux artisanaux', 'bougies artisanales', 'peinture', 'création de meubles',
