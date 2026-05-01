@@ -322,7 +322,7 @@ export default function DiscoverScreen() {
             </Text>
           </TouchableOpacity>
           <Text style={[typography.h1, { color: theme.title, marginTop: spacing.xs }]}>
-            Bonjour{user ? `, ${user.full_name.split(' ')[0]}` : ''} 👋
+            Bonjour{user ? `, ${user.full_name}` : ''} 👋
           </Text>
         </View>
         <TouchableOpacity

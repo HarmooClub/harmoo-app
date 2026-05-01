@@ -148,6 +148,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateUser = async (data: Partial<User>) => {
     if (!token) throw new Error('Not authenticated');
     
+    // Optimistic update: apply changes instantly
+    if (user) {
+      const optimistic = { ...user, ...data };
+      setUser(optimistic as User);
+    }
+    
     const response = await axios.put(`${API_URL}/api/users/profile`, data, {
       headers: { Authorization: `Bearer ${token}` }
     });
