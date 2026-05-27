@@ -2314,7 +2314,7 @@ async def create_checkout_session(
         "url": f"https://checkout.stripe.com/mock/{session_id}",
         "status": "created",
         "plan": plan_type,
-        "amount": 6000,  # 60€ in cents
+        "amount": 3000,  # 30€ in cents
         "currency": "eur",
         "mock": True
     }

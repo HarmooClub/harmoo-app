@@ -49,13 +49,6 @@ function RootLayoutNav() {
             presentation: 'modal' 
           }} 
         />
-        <Stack.Screen 
-          name="chat/[conversationId]" 
-          options={{ 
-            headerShown: false,
-            presentation: 'card' 
-          }} 
-        />
       </Stack>
     </>
   );

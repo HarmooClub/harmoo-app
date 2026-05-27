@@ -65,7 +65,7 @@ const storage = {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Start false — don't block rendering
 
   useEffect(() => {
     loadStoredAuth();
@@ -77,10 +77,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const storedUser = await storage.getItem('user');
       
       if (storedToken && storedUser) {
+        // Restore session instantly from storage
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
         
-        // Verify token is still valid
+        // Validate token in background — don't block anything
         try {
           const response = await axios.get(`${API_URL}/api/auth/me`, {
             headers: { Authorization: `Bearer ${storedToken}` }
@@ -88,14 +89,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(response.data);
           await storage.setItem('user', JSON.stringify(response.data));
         } catch (error) {
-          // Token invalid, clear auth
+          // Token invalid — silently clear
           await logout();
         }
       }
     } catch (error) {
       console.error('Failed to load auth:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
