@@ -73,7 +73,7 @@ const PLANS = [
   },
 ];
 
-const CLUB_PRICE = 30;
+const CLUB_PRICE = 60;
 const CLUB_MAX_MEMBERS = 10;
 
 export default function MembershipScreen() {
