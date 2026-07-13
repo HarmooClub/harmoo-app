@@ -1,92 +1,132 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../src/contexts/ThemeContext';
 import { useAuth } from '../src/contexts/AuthContext';
-import { ScreenHeader } from '../src/components/ScreenHeader';
-import { Avatar } from '../src/components/Avatar';
-import { Input } from '../src/components/Input';
-import { Button } from '../src/components/Button';
-import { Card } from '../src/components/Card';
-import { spacing, typography, radius } from '../src/theme';
+import { spacing, radius, typography } from '../src/theme';
 
 export default function EditProfileScreen() {
   const { theme } = useTheme();
   const { user, updateUser } = useAuth();
   const router = useRouter();
-  const [fullName, setFullName] = useState(user?.full_name || '');
-  const [bio, setBio] = useState(user?.bio || '');
-  const [city, setCity] = useState(user?.city || '');
-  const [hourlyRate, setHourlyRate] = useState(user?.hourly_rate?.toString() || '');
-  const [isSaving, setIsSaving] = useState(false);
+  const [saving, setSaving] = useState(false);
+  
+  const [fullName, setFullName] = useState('');
+  const [location, setLocation] = useState('');
+  const [bio, setBio] = useState('');
+  const [organization, setOrganization] = useState('');
 
-  const pickImage = async () => {
-    try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert('Permission requise', 'Autorisez l\'accès à vos photos.');
-        return;
-      }
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        quality: 0.8,
-        base64: true,
-      });
-      if (!result.canceled && result.assets[0]) {
-        const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
-        await updateUser({ avatar: base64Image });
-      }
-    } catch (error) {
-      Alert.alert('Erreur', 'Impossible de changer la photo');
+  useEffect(() => {
+    if (user) {
+      setFullName(user.full_name || '');
+      setLocation(user.location || '');
+      setBio(user.bio || '');
+      setOrganization(user.organization || '');
     }
-  };
+  }, [user]);
 
   const handleSave = async () => {
-    setIsSaving(true);
+    if (!fullName.trim()) {
+      Alert.alert('Erreur', 'Le nom est requis');
+      return;
+    }
+
+    setSaving(true);
     try {
-      const data: any = { full_name: fullName.trim(), bio: bio.trim(), city: city.trim() };
-      if (hourlyRate) data.hourly_rate = parseFloat(hourlyRate);
-      await updateUser(data);
+      await updateUser({
+        full_name: fullName.trim(),
+        location: location.trim() || undefined,
+        bio: bio.trim() || undefined,
+        organization: organization.trim() || undefined,
+      } as any);
       Alert.alert('Succès', 'Profil mis à jour');
       router.back();
-    } catch (e) { Alert.alert('Erreur', 'Impossible de mettre à jour'); }
-    finally { setIsSaving(false); }
+    } catch (e: any) {
+      Alert.alert('Erreur', e.response?.data?.detail || 'Impossible de sauvegarder');
+    } finally { setSaving(false); }
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-      <ScreenHeader title="Modifier le profil" />
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={24} color={theme.title} />
+          </TouchableOpacity>
+          <Text style={[typography.h2, { color: theme.title }]}>Modifier le profil</Text>
+          <View style={{ width: 40 }} />
+        </View>
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.form}>
-          {/* Avatar with upload */}
-          <View style={styles.avatarSection}>
-            <Avatar
-              uri={user?.avatar}
-              name={user?.full_name || ''}
-              size={100}
-              borderRadius={32}
-              onPress={pickImage}
-              showEdit
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: spacing.lg, paddingBottom: 100 }}>
+          {/* Full Name */}
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Nom complet *</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: theme.card, color: theme.title, borderColor: theme.border }]}
+              value={fullName}
+              onChangeText={setFullName}
+              placeholder="Votre nom"
+              placeholderTextColor={theme.textSecondary}
             />
-            <TouchableOpacity onPress={pickImage}>
-              <Text style={[typography.labelMedium, { color: theme.primary, marginTop: spacing.sm }]}>Changer la photo</Text>
-            </TouchableOpacity>
           </View>
 
-          <Input label="Nom complet" value={fullName} onChangeText={setFullName} placeholder="Votre nom" icon="person-outline" />
-          <Input label="Bio" value={bio} onChangeText={setBio} placeholder="Parlez de vous..." multiline numberOfLines={4} />
-          <Input label="Ville" value={city} onChangeText={setCity} placeholder="Paris" icon="location-outline" />
+          {/* Location */}
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Localisation</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: theme.card, color: theme.title, borderColor: theme.border }]}
+              value={location}
+              onChangeText={setLocation}
+              placeholder="Ex: Paris, France"
+              placeholderTextColor={theme.textSecondary}
+            />
+          </View>
 
-          {(user?.user_type === 'freelancer' || user?.is_provider_mode) && (
-            <Input label="Tarif horaire (€)" value={hourlyRate} onChangeText={setHourlyRate} placeholder="50" keyboardType="numeric" icon="cash-outline" />
-          )}
+          {/* Organization */}
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Organisation / Entreprise</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: theme.card, color: theme.title, borderColor: theme.border }]}
+              value={organization}
+              onChangeText={setOrganization}
+              placeholder="Ex: Harmoo Club"
+              placeholderTextColor={theme.textSecondary}
+            />
+          </View>
 
-          <Button title="Enregistrer" onPress={handleSave} isLoading={isSaving} style={{ marginTop: spacing.lg }} />
+          {/* Bio */}
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Bio / Description</Text>
+            <TextInput
+              style={[styles.textArea, { backgroundColor: theme.card, color: theme.title, borderColor: theme.border }]}
+              value={bio}
+              onChangeText={setBio}
+              placeholder="Décrivez-vous en quelques mots..."
+              placeholderTextColor={theme.textSecondary}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+          </View>
         </ScrollView>
+
+        {/* Save Button */}
+        <View style={[styles.footer, { backgroundColor: theme.background, borderTopColor: theme.border }]}>
+          <TouchableOpacity
+            style={[styles.saveBtn, { backgroundColor: theme.primary }]}
+            onPress={handleSave}
+            disabled={saving}
+          >
+            {saving ? (
+              <ActivityIndicator size="small" color="#FFF" />
+            ) : (
+              <Text style={[typography.labelLarge, { color: '#FFF' }]}>Enregistrer</Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -94,6 +134,12 @@ export default function EditProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  form: { padding: spacing.xl, paddingBottom: 40 },
-  avatarSection: { alignItems: 'center', marginBottom: spacing.xxl },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
+  backBtn: { width: 40, height: 40, justifyContent: 'center' },
+  inputGroup: { marginBottom: spacing.lg },
+  label: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
+  input: { borderWidth: 1, borderRadius: radius.md, padding: spacing.md, fontSize: 16 },
+  textArea: { borderWidth: 1, borderRadius: radius.md, padding: spacing.md, fontSize: 16, minHeight: 120 },
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: spacing.lg, borderTopWidth: 1 },
+  saveBtn: { paddingVertical: 16, borderRadius: radius.lg, alignItems: 'center' },
 });

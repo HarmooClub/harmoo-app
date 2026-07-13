@@ -106,7 +106,25 @@ export default function ProfileScreen() {
               {user.subcategories?.[0] || user.categories?.[0]}
             </Text>
           )}
+          {user.location && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+              <Ionicons name="location-outline" size={14} color={theme.textSecondary} />
+              <Text style={[typography.caption, { color: theme.textSecondary, marginLeft: 4 }]}>{user.location}</Text>
+            </View>
+          )}
         </View>
+
+        {/* Admin: Edit Name & Location */}
+        {isAdmin && (
+          <TouchableOpacity
+            style={[styles.menuItem, { borderColor: theme.border }]}
+            onPress={() => router.push('/edit-profile' as any)}
+          >
+            <Ionicons name="person-outline" size={22} color={theme.primary} />
+            <Text style={[typography.body, { color: theme.title, flex: 1, marginLeft: 14 }]}>Modifier mon nom et localisation</Text>
+            <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
+          </TouchableOpacity>
+        )}
 
         {/* Edit category/profession */}
         <TouchableOpacity
