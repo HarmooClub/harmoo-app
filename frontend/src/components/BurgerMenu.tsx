@@ -36,7 +36,7 @@ export function BurgerMenu() {
     items.push({ icon: 'person-outline', label: 'Mon profil', route: '/(tabs)/profile' });
     items.push({ icon: 'receipt-outline', label: 'Mes réservations', route: '/(tabs)/bookings' });
     if (isAdmin) {
-      items.push({ icon: 'construct-outline', label: 'Mes services', route: '/manage-services' });
+      items.push({ icon: 'construct-outline', label: 'Mes services', route: '/my-services' });
       items.push({ icon: 'wallet-outline', label: 'Caisse', route: '/cash-register' });
     }
   }

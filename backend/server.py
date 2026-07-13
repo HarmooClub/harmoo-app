@@ -1071,6 +1071,70 @@ async def delete_portfolio_item(item_id: str, current_user: dict = Depends(get_c
 
 # ==================== SERVICE ENDPOINTS ====================
 
+# TEMPORARY: Admin endpoint to seed Harmoo Club services
+@api_router.post("/admin/seed-harmoo-services")
+async def seed_harmoo_services(admin_key: str = Query(...)):
+    if admin_key != "harmoo-admin-2025":
+        raise HTTPException(status_code=403, detail="Invalid admin key")
+    
+    harmoo_user = await db.users.find_one({"email": HARMOO_ADMIN_EMAIL})
+    if not harmoo_user:
+        raise HTTPException(status_code=404, detail="Harmoo Club user not found")
+    
+    # Delete existing services first
+    await db.services.delete_many({"freelancer_id": harmoo_user["id"]})
+    
+    services_to_create = [
+        {
+            "id": str(uuid.uuid4()),
+            "freelancer_id": harmoo_user["id"],
+            "title": "Session Podcast 1h",
+            "description": "Session d'enregistrement podcast de 1 heure au studio Harmoo Club. Matériel professionnel inclus.",
+            "category": "content",
+            "subcategory": "studio d'enregistrement",
+            "price": 35.0,
+            "price_unit": "fixed",
+            "duration_hours": 1.0,
+            "images": [],
+            "options": [],
+            "is_active": True,
+            "created_at": datetime.utcnow()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "freelancer_id": harmoo_user["id"],
+            "title": "Session Podcast 2h",
+            "description": "Session d'enregistrement podcast de 2 heures au studio Harmoo Club. Matériel professionnel inclus.",
+            "category": "content",
+            "subcategory": "studio d'enregistrement",
+            "price": 60.0,
+            "price_unit": "fixed",
+            "duration_hours": 2.0,
+            "images": [],
+            "options": [],
+            "is_active": True,
+            "created_at": datetime.utcnow()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "freelancer_id": harmoo_user["id"],
+            "title": "Session Podcast 3h",
+            "description": "Session d'enregistrement podcast de 3 heures au studio Harmoo Club. Matériel professionnel inclus.",
+            "category": "content",
+            "subcategory": "studio d'enregistrement",
+            "price": 80.0,
+            "price_unit": "fixed",
+            "duration_hours": 3.0,
+            "images": [],
+            "options": [],
+            "is_active": True,
+            "created_at": datetime.utcnow()
+        }
+    ]
+    
+    await db.services.insert_many(services_to_create)
+    return {"message": "3 services créés pour Harmoo Club", "services": [s["title"] for s in services_to_create]}
+
 @api_router.post("/services")
 async def create_service(
     service: ServiceCreate,
