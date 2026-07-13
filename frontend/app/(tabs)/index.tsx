@@ -141,7 +141,7 @@ export default function HomeScreen() {
             <View style={styles.studioOverlay}>
               <View style={styles.studioBadge}>
                 <Ionicons name="checkmark-circle" size={14} color="#1DA1F2" />
-                <Text style={styles.studioBadgeText}>{harmooClub.full_name?.toUpperCase() || 'HARMOO STUDIO'}</Text>
+                <Text style={styles.studioBadgeText}>HARMOO STUDIO</Text>
               </View>
               <Text style={styles.studioTitle}>Studio d'enregistrement</Text>
               <Text style={styles.studioSubtitle}>Réserve ta session dès maintenant</Text>
