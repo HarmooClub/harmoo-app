@@ -2223,6 +2223,124 @@ async def get_membership_status(current_user: dict = Depends(get_current_user)):
         "total_members": total_members
     }
 
+# ==================== SITE SETTINGS (ADMIN ONLY) ====================
+
+class EventCreate(BaseModel):
+    title: str
+    date: Optional[str] = None
+    shotgun_url: Optional[str] = None
+    image_url: Optional[str] = None
+
+class EventUpdate(BaseModel):
+    title: Optional[str] = None
+    date: Optional[str] = None
+    shotgun_url: Optional[str] = None
+    image_url: Optional[str] = None
+
+class SiteSettingsUpdate(BaseModel):
+    youtube_url: Optional[str] = None
+
+@api_router.get("/site-settings")
+async def get_site_settings():
+    """Get site settings (public)"""
+    settings = await db.site_settings.find_one({"_id": "main"})
+    if not settings:
+        settings = {"youtube_url": None}
+    return {
+        "youtube_url": settings.get("youtube_url")
+    }
+
+@api_router.put("/site-settings")
+async def update_site_settings(
+    data: SiteSettingsUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update site settings (admin only)"""
+    if current_user.get("email") != HARMOO_ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Accès réservé à l'administrateur")
+    
+    update_data = {}
+    if data.youtube_url is not None:
+        update_data["youtube_url"] = data.youtube_url
+    
+    if update_data:
+        await db.site_settings.update_one(
+            {"_id": "main"},
+            {"$set": update_data},
+            upsert=True
+        )
+    
+    return {"message": "Paramètres mis à jour"}
+
+# Events management
+@api_router.get("/events")
+async def get_events():
+    """Get all events (public)"""
+    events = await db.events.find().sort("created_at", -1).to_list(20)
+    return [{k: v for k, v in e.items() if k != "_id"} for e in events]
+
+@api_router.post("/events")
+async def create_event(
+    event: EventCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Create event (admin only)"""
+    if current_user.get("email") != HARMOO_ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Accès réservé à l'administrateur")
+    
+    event_obj = {
+        "id": str(uuid.uuid4()),
+        "title": event.title,
+        "date": event.date,
+        "shotgun_url": event.shotgun_url,
+        "image_url": event.image_url,
+        "created_at": datetime.utcnow()
+    }
+    await db.events.insert_one(event_obj)
+    return {k: v for k, v in event_obj.items() if k != "_id"}
+
+@api_router.put("/events/{event_id}")
+async def update_event(
+    event_id: str,
+    event: EventUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update event (admin only)"""
+    if current_user.get("email") != HARMOO_ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Accès réservé à l'administrateur")
+    
+    update_data = {}
+    if event.title is not None:
+        update_data["title"] = event.title
+    if event.date is not None:
+        update_data["date"] = event.date
+    if event.shotgun_url is not None:
+        update_data["shotgun_url"] = event.shotgun_url
+    if event.image_url is not None:
+        update_data["image_url"] = event.image_url
+    
+    if update_data:
+        await db.events.update_one({"id": event_id}, {"$set": update_data})
+    
+    updated = await db.events.find_one({"id": event_id})
+    if not updated:
+        raise HTTPException(status_code=404, detail="Événement non trouvé")
+    return {k: v for k, v in updated.items() if k != "_id"}
+
+@api_router.delete("/events/{event_id}")
+async def delete_event(
+    event_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Delete event (admin only)"""
+    if current_user.get("email") != HARMOO_ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Accès réservé à l'administrateur")
+    
+    result = await db.events.delete_one({"id": event_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Événement non trouvé")
+    return {"message": "Événement supprimé"}
+
 # ==================== FAVORITES ENDPOINTS ====================
 
 @api_router.post("/favorites/{freelancer_id}")

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator, Platform, TextInput, Modal, Alert, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -8,14 +8,21 @@ import { useTheme } from '../../src/contexts/ThemeContext';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { BurgerMenu } from '../../src/components/BurgerMenu';
 import { spacing, radius, typography } from '../../src/theme';
-import api from '../../src/services/api';
+import api, { siteSettingsApi, eventsApi } from '../../src/services/api';
 
 const { width } = Dimensions.get('window');
 const HARMOO_ADMIN_EMAIL = 'harmoo.app@gmail.com';
 
 // Logo dimensions - responsive
 const LOGO_HEIGHT = 28;
-const LOGO_WIDTH = 140; // Aspect ratio ~5:1
+const LOGO_WIDTH = 140;
+
+// Extract YouTube video ID from URL
+function getYouTubeVideoId(url: string): string | null {
+  if (!url) return null;
+  const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+  return match ? match[1] : null;
+}
 
 export default function HomeScreen() {
   const { theme } = useTheme();
@@ -23,16 +30,34 @@ export default function HomeScreen() {
   const router = useRouter();
   const [harmooClub, setHarmooClub] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [youtubeUrl, setYoutubeUrl] = useState<string | null>(null);
+  const [events, setEvents] = useState<any[]>([]);
+  
+  // Admin edit states
+  const [showYoutubeModal, setShowYoutubeModal] = useState(false);
+  const [editYoutubeUrl, setEditYoutubeUrl] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const isAdmin = user?.email === HARMOO_ADMIN_EMAIL;
 
   useEffect(() => {
-    loadHarmooClub();
+    loadAll();
   }, []);
 
-  const loadHarmooClub = async () => {
+  const loadAll = async () => {
     try {
-      const res = await api.get('/freelancers?limit=50&skip=0');
-      const hc = res.data.find((f: any) => f.email === HARMOO_ADMIN_EMAIL);
+      setLoading(true);
+      const [freelancersRes, settingsRes, eventsRes] = await Promise.all([
+        api.get('/freelancers?limit=50&skip=0'),
+        siteSettingsApi.get().catch(() => ({ data: {} })),
+        eventsApi.getAll().catch(() => ({ data: [] })),
+      ]);
+      
+      const hc = freelancersRes.data.find((f: any) => f.email === HARMOO_ADMIN_EMAIL);
       if (hc) setHarmooClub(hc);
+      
+      setYoutubeUrl(settingsRes.data?.youtube_url || null);
+      setEvents(eventsRes.data || []);
     } catch (e) { console.warn(e); }
     finally { setLoading(false); }
   };
@@ -41,6 +66,27 @@ export default function HomeScreen() {
     const base = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://harmoo-backen.onrender.com';
     return `${base}/api/avatar/${id}`;
   };
+
+  const saveYoutubeUrl = async () => {
+    setSaving(true);
+    try {
+      await siteSettingsApi.update({ youtube_url: editYoutubeUrl });
+      setYoutubeUrl(editYoutubeUrl);
+      setShowYoutubeModal(false);
+      Alert.alert('Succès', 'Lien YouTube mis à jour');
+    } catch (e: any) {
+      Alert.alert('Erreur', e.response?.data?.detail || 'Impossible de sauvegarder');
+    } finally { setSaving(false); }
+  };
+
+  const openYoutubeVideo = () => {
+    if (youtubeUrl) {
+      Linking.openURL(youtubeUrl);
+    }
+  };
+
+  const videoId = getYouTubeVideoId(youtubeUrl || '');
+  const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
@@ -61,7 +107,7 @@ export default function HomeScreen() {
         {/* Hero: Greeting */}
         <View style={styles.heroSection}>
           <Text style={[typography.h1, { color: theme.title }]}>
-            Bonjour{user ? `, ${user.full_name}` : ''} 👋
+            Bonjour{user ? `, ${user.full_name?.split(' ')[0]}` : ''} 👋
           </Text>
           <Text style={[typography.body, { color: theme.textSecondary, marginTop: 4 }]}>
             Bienvenue chez Harmoo Club
@@ -106,12 +152,30 @@ export default function HomeScreen() {
         {/* Actualité YouTube */}
         <View style={styles.sectionHeader}>
           <Text style={[typography.h3, { color: theme.title }]}>Actualité</Text>
+          {isAdmin && (
+            <TouchableOpacity onPress={() => { setEditYoutubeUrl(youtubeUrl || ''); setShowYoutubeModal(true); }}>
+              <Ionicons name="pencil" size={18} color={theme.primary} />
+            </TouchableOpacity>
+          )}
         </View>
-        <TouchableOpacity style={[styles.placeholderCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          <Ionicons name="logo-youtube" size={40} color="#FF0000" />
-          <Text style={[typography.body, { color: theme.textSecondary, marginTop: spacing.sm }]}>Vidéo à venir</Text>
-          <Text style={[typography.caption, { color: theme.textSecondary }]}>Le contenu YouTube sera affiché ici</Text>
-        </TouchableOpacity>
+        
+        {thumbnailUrl ? (
+          <TouchableOpacity style={styles.youtubeCard} onPress={openYoutubeVideo} activeOpacity={0.9}>
+            <Image source={{ uri: thumbnailUrl }} style={styles.youtubeThumbnail} contentFit="cover" />
+            <View style={styles.youtubePlayBtn}>
+              <Ionicons name="play" size={32} color="#FFF" />
+            </View>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity 
+            style={[styles.placeholderCard, { backgroundColor: theme.card, borderColor: theme.border }]}
+            onPress={isAdmin ? () => { setEditYoutubeUrl(''); setShowYoutubeModal(true); } : undefined}
+          >
+            <Ionicons name="logo-youtube" size={40} color="#FF0000" />
+            <Text style={[typography.body, { color: theme.textSecondary, marginTop: spacing.sm }]}>Vidéo à venir</Text>
+            {isAdmin && <Text style={[typography.caption, { color: theme.primary, marginTop: 4 }]}>Appuie pour ajouter un lien</Text>}
+          </TouchableOpacity>
+        )}
 
         {/* Événements preview */}
         <View style={styles.sectionHeader}>
@@ -120,14 +184,29 @@ export default function HomeScreen() {
             <Text style={[typography.labelMedium, { color: theme.primary }]}>Voir tout</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={[styles.placeholderCard, { backgroundColor: theme.card, borderColor: theme.border }]}
-          onPress={() => router.push('/events' as any)}
-        >
-          <Ionicons name="calendar" size={40} color={theme.primary} />
-          <Text style={[typography.body, { color: theme.textSecondary, marginTop: spacing.sm }]}>Événements à venir</Text>
-          <Text style={[typography.caption, { color: theme.textSecondary }]}>Les événements Shotgun seront affichés ici</Text>
-        </TouchableOpacity>
+        
+        {events.length > 0 ? (
+          <TouchableOpacity
+            style={[styles.eventCard, { backgroundColor: theme.card, borderColor: theme.border }]}
+            onPress={() => events[0].shotgun_url ? Linking.openURL(events[0].shotgun_url) : router.push('/events' as any)}
+          >
+            <Ionicons name="calendar" size={32} color={theme.primary} />
+            <View style={{ flex: 1, marginLeft: spacing.md }}>
+              <Text style={[typography.h4, { color: theme.title }]}>{events[0].title}</Text>
+              {events[0].date && <Text style={[typography.caption, { color: theme.textSecondary }]}>{events[0].date}</Text>}
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[styles.placeholderCard, { backgroundColor: theme.card, borderColor: theme.border }]}
+            onPress={() => router.push('/events' as any)}
+          >
+            <Ionicons name="calendar" size={40} color={theme.primary} />
+            <Text style={[typography.body, { color: theme.textSecondary, marginTop: spacing.sm }]}>Événements à venir</Text>
+            <Text style={[typography.caption, { color: theme.textSecondary }]}>Les événements seront affichés ici</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Harmoo Club Membership */}
         <View style={styles.sectionHeader}>
@@ -149,6 +228,32 @@ export default function HomeScreen() {
           </View>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* YouTube URL Modal */}
+      <Modal visible={showYoutubeModal} transparent animationType="fade" onRequestClose={() => setShowYoutubeModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+            <Text style={[typography.h3, { color: theme.title, marginBottom: spacing.lg }]}>Lien vidéo YouTube</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: theme.background, color: theme.title, borderColor: theme.border }]}
+              value={editYoutubeUrl}
+              onChangeText={setEditYoutubeUrl}
+              placeholder="https://www.youtube.com/watch?v=..."
+              placeholderTextColor={theme.textSecondary}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={[styles.modalBtn, { backgroundColor: theme.background }]} onPress={() => setShowYoutubeModal(false)}>
+                <Text style={[typography.labelMedium, { color: theme.textSecondary }]}>Annuler</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalBtn, { backgroundColor: theme.primary }]} onPress={saveYoutubeUrl} disabled={saving}>
+                {saving ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={[typography.labelMedium, { color: '#FFF' }]}>Enregistrer</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -167,6 +272,15 @@ const styles = StyleSheet.create({
   studioBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#DC1B78', alignSelf: 'flex-start', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 30, marginTop: 16 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.lg, marginTop: spacing.xl, marginBottom: spacing.md },
   placeholderCard: { marginHorizontal: spacing.lg, borderRadius: radius.lg, borderWidth: 1, padding: spacing.xl, alignItems: 'center', justifyContent: 'center', minHeight: 140 },
+  youtubeCard: { marginHorizontal: spacing.lg, borderRadius: radius.lg, overflow: 'hidden', height: 200, position: 'relative' },
+  youtubeThumbnail: { width: '100%', height: '100%' },
+  youtubePlayBtn: { position: 'absolute', top: '50%', left: '50%', transform: [{ translateX: -28 }, { translateY: -28 }], width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
+  eventCard: { marginHorizontal: spacing.lg, borderRadius: radius.lg, borderWidth: 1, padding: spacing.lg, flexDirection: 'row', alignItems: 'center' },
   clubCard: { marginHorizontal: spacing.lg, borderRadius: radius.lg, borderWidth: 1.5, padding: spacing.lg },
   clubIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(220,27,120,0.1)', justifyContent: 'center', alignItems: 'center' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: spacing.xl },
+  modalContent: { width: '100%', maxWidth: 400, borderRadius: radius.xl, padding: spacing.xl },
+  input: { borderWidth: 1, borderRadius: radius.md, padding: spacing.md, fontSize: 16 },
+  modalButtons: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.xl },
+  modalBtn: { flex: 1, paddingVertical: spacing.md, borderRadius: radius.md, alignItems: 'center' },
 });

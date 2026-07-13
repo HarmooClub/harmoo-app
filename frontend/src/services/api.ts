@@ -187,4 +187,20 @@ export const subscriptionApi = {
   getPlans: () => api.get('/subscriptions/plans'),
 };
 
+// Site Settings API (Admin only for write)
+export const siteSettingsApi = {
+  get: () => api.get('/site-settings'),
+  update: (data: { youtube_url?: string }) => api.put('/site-settings', data),
+};
+
+// Events API
+export const eventsApi = {
+  getAll: () => api.get('/events'),
+  create: (data: { title: string; date?: string; shotgun_url?: string; image_url?: string }) =>
+    api.post('/events', data),
+  update: (id: string, data: { title?: string; date?: string; shotgun_url?: string; image_url?: string }) =>
+    api.put(`/events/${id}`, data),
+  delete: (id: string) => api.delete(`/events/${id}`),
+};
+
 export default api;
