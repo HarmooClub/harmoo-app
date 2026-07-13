@@ -393,7 +393,7 @@ export default function FreelancerDetailScreen() {
         </View>
       </Animated.ScrollView>
 
-      {/* Fixed Bottom Bar — ONLY show for Harmoo Club profile */}
+      {/* Fixed Bottom Bar — Show for Harmoo Club profile when visited by others */}
       {freelancer?.email === 'harmoo.app@gmail.com' && user?.id !== freelancer?.id && (
       <View style={[styles.bottomBar, { backgroundColor: theme.card, borderTopColor: theme.divider }]}>
         <TouchableOpacity

@@ -2272,6 +2272,22 @@ async def update_site_settings(
     
     return {"message": "Paramètres mis à jour"}
 
+# Admin: Quick update Harmoo profile name
+@api_router.post("/admin/update-harmoo-name")
+async def update_harmoo_name(admin_key: str = Query(...), name: str = Query(...)):
+    if admin_key != "harmoo-admin-2025":
+        raise HTTPException(status_code=403, detail="Invalid admin key")
+    
+    result = await db.users.update_one(
+        {"email": HARMOO_ADMIN_EMAIL},
+        {"$set": {"full_name": name}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="User not found or name unchanged")
+    
+    return {"message": f"Nom mis à jour: {name}"}
+
 # Events management
 @api_router.get("/events")
 async def get_events():
