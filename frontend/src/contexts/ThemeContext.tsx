@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useColorScheme } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useColorScheme, Appearance } from 'react-native';
 import { lightTheme, darkTheme, type ThemeColors } from '../theme';
 
 // Re-export for backward compat
@@ -31,32 +30,27 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  // Get system color scheme
   const systemColorScheme = useColorScheme();
   const [isDark, setIsDark] = useState(systemColorScheme === 'dark');
 
+  // Listen to system theme changes in real-time
   useEffect(() => {
-    loadThemePreference();
+    setIsDark(systemColorScheme === 'dark');
+  }, [systemColorScheme]);
+
+  // Also listen to Appearance changes (for iOS Control Center)
+  useEffect(() => {
+    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
+      setIsDark(colorScheme === 'dark');
+    });
+
+    return () => subscription.remove();
   }, []);
 
-  const loadThemePreference = async () => {
-    try {
-      const saved = await AsyncStorage.getItem('theme');
-      if (saved !== null) {
-        setIsDark(saved === 'dark');
-      }
-    } catch (error) {
-      console.error('Failed to load theme:', error);
-    }
-  };
-
-  const toggleTheme = async () => {
-    const newIsDark = !isDark;
-    setIsDark(newIsDark);
-    try {
-      await AsyncStorage.setItem('theme', newIsDark ? 'dark' : 'light');
-    } catch (error) {
-      console.error('Failed to save theme:', error);
-    }
+  // Keep toggleTheme for manual override if needed
+  const toggleTheme = () => {
+    setIsDark(prev => !prev);
   };
 
   const theme = isDark ? darkTheme : lightTheme;
