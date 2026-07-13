@@ -96,7 +96,20 @@
 # END - Testing Protocol - DO NOT EDIT OR REMOVE THIS SECTION
 #====================================================================================================
 
-user_problem_statement: "Fix RIB (bank details) addition on 'Caisse' page - save button doesn't work and doesn't save"
+user_problem_statement: "Test the Harmoo Club app at https://harmooclub.com after the database update - verify studio name changed from 'HARMOO CLUB' to 'HARMOO STUDIO'"
+
+frontend:
+  - task: "Database update verification - Studio name change from 'HARMOO CLUB' to 'HARMOO STUDIO'"
+    implemented: true
+    working: true
+    file: "Production site: https://harmooclub.com"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "testing"
+        - comment: "✅ DATABASE UPDATE VERIFIED SUCCESSFULLY! Tested on mobile (390x844). HOME PAGE: Studio card badge correctly shows 'HARMOO STUDIO' (not 'HARMOO CLUB') with blue checkmark icon. Black gradient overlay visible at bottom of studio card. 'Réserver' button visible on card. PROFILE PAGE (https://harmooclub.com/freelancer/4b2fa8d2-907b-467d-b7c8-47c8fe624162): Profile name displays 'Harmoo Studio' (correct). 'Réserver' button visible. All critical verifications passed. Database update successfully applied."
 
 backend:
   - task: "Self-like prevention on favorites endpoint"
@@ -149,8 +162,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Bank details route conflict fix (GET/PUT /api/users/bank-details)"
-    - "Bank details save endpoint (PUT /api/users/bank-details)"
+    - "Database update verification - Studio name change from 'HARMOO CLUB' to 'HARMOO STUDIO'"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -160,3 +172,5 @@ agent_communication:
     - message: "Fixed critical route conflict bug. The GET /api/users/bank-details endpoint was being captured by GET /api/users/{user_id} (defined on line 829) because FastAPI matches routes in definition order. 'bank-details' was treated as a user_id. FIX: Moved bank details endpoints BEFORE the parameterized route. Please test: 1) Register a test user (POST /api/auth/register), 2) Login to get token, 3) GET /api/users/bank-details with token should return empty {}, 4) PUT /api/users/bank-details with iban/bic/account_holder should save, 5) GET /api/users/bank-details should now return saved data with iban_masked. Base URL: http://localhost:8001/api. Test user: any new registration or use existing test@test.com / test123"
     - agent: "testing"
     - message: "🎉 BANK DETAILS (RIB) API TESTING COMPLETE - ALL CRITICAL TESTS PASSED! ✅ Route conflict successfully fixed - GET /api/users/bank-details now returns {} instead of 404 'Utilisateur non trouvé' ✅ PUT /api/users/bank-details successfully saves bank details ✅ GET /api/users/bank-details returns saved data with correct IBAN masking (****0189) ✅ User profile endpoint /api/users/{user_id} still works correctly. Fixed 2 minor bugs during testing: 1) bank_details null handling in get_bank_details function, 2) avatar null handling in registration. Test user: ribtest4@test.com. The original user problem 'save button doesn't work and doesn't save' on Caisse page is now resolved at the API level."
+    - agent: "testing"
+    - message: "✅ DATABASE UPDATE VERIFICATION COMPLETE - ALL TESTS PASSED! Tested production site https://harmooclub.com on mobile (390x844). HOME PAGE: Studio card badge correctly displays 'HARMOO STUDIO' (not 'HARMOO CLUB') with blue checkmark icon. Black gradient overlay visible at bottom of studio card. 'Réserver' button visible. PROFILE PAGE: Name correctly displays 'Harmoo Studio'. 'Réserver' button visible. Database update successfully applied. Screenshots captured: home_page_mobile.png, profile_page_final.png"
