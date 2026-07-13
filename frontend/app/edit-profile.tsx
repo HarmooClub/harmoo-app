@@ -41,7 +41,7 @@ export default function EditProfileScreen() {
         bio: bio.trim() || undefined,
         organization: organization.trim() || undefined,
       } as any);
-      Alert.alert('Succès', 'Profil mis à jour');
+      // Retour automatique sans Alert pour confirmer la modification
       router.back();
     } catch (e: any) {
       Alert.alert('Erreur', e.response?.data?.detail || 'Impossible de sauvegarder');
