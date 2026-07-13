@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -12,6 +12,10 @@ import api from '../../src/services/api';
 
 const { width } = Dimensions.get('window');
 const HARMOO_ADMIN_EMAIL = 'harmoo.app@gmail.com';
+
+// Logo dimensions - responsive
+const LOGO_HEIGHT = 28;
+const LOGO_WIDTH = 140; // Aspect ratio ~5:1
 
 export default function HomeScreen() {
   const { theme } = useTheme();
@@ -40,10 +44,16 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-      {/* Header */}
+      {/* Header with centered logo */}
       <View style={styles.header}>
         <BurgerMenu />
-        <Text style={[typography.h2, { color: theme.title }]}>Harmoo</Text>
+        <View style={styles.logoContainer}>
+          <Image
+            source={require('../../assets/harmoo-logo.png')}
+            style={styles.logo}
+            contentFit="contain"
+          />
+        </View>
         <View style={{ width: 28 }} />
       </View>
 
@@ -146,6 +156,8 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
+  logoContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  logo: { width: LOGO_WIDTH, height: LOGO_HEIGHT },
   heroSection: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.lg },
   studioCard: { marginHorizontal: spacing.lg, height: 280, borderRadius: radius.xl, overflow: 'hidden' },
   studioOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end', padding: spacing.xl },

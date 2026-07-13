@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, Pressable, Linking } f
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { spacing, radius, typography } from '../theme';
@@ -52,9 +53,13 @@ export function BurgerMenu() {
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.overlay} onPress={() => setOpen(false)}>
           <Pressable onPress={(e) => e.stopPropagation()} style={[styles.drawer, { backgroundColor: theme.card, paddingTop: insets.top + 16 }]}>
-            {/* Header */}
+            {/* Header with Logo */}
             <View style={styles.drawerHeader}>
-              <Text style={[typography.h2, { color: theme.title }]}>Harmoo</Text>
+              <Image
+                source={require('../../assets/harmoo-logo.png')}
+                style={styles.drawerLogo}
+                contentFit="contain"
+              />
               <TouchableOpacity onPress={() => setOpen(false)}>
                 <Ionicons name="close" size={28} color={theme.title} />
               </TouchableOpacity>
@@ -106,6 +111,7 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.4)' },
   drawer: { width: '80%', maxWidth: 320, height: '100%', paddingHorizontal: spacing.lg },
   drawerHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xl, paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.06)' },
+  drawerLogo: { width: 120, height: 24 },
   menuItems: { flex: 1 },
   menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 0.5 },
   drawerFooter: { paddingVertical: spacing.xl },
