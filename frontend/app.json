@@ -14,7 +14,8 @@
         "NSLocationWhenInUseUsageDescription": "Pour trouver des créatifs près de vous",
         "NSPhotoLibraryUsageDescription": "Pour ajouter des photos à votre portfolio",
         "NSCameraUsageDescription": "Pour prendre des photos de vos créations"
-      }
+      },
+      "bundleIdentifier": "com.emergent.aprillaunch.dk3oxv"
     },
     "android": {
       "adaptiveIcon": {
@@ -27,7 +28,8 @@
         "ACCESS_COARSE_LOCATION",
         "CAMERA",
         "READ_EXTERNAL_STORAGE"
-      ]
+      ],
+      "package": "com.emergent.aprillaunch.dk3oxv"
     },
     "web": {
       "bundler": "metro",
