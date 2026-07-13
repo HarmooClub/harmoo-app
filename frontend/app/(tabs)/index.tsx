@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../src/contexts/ThemeContext';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { BurgerMenu } from '../../src/components/BurgerMenu';
@@ -132,10 +133,15 @@ export default function HomeScreen() {
               style={StyleSheet.absoluteFillObject}
               contentFit="cover"
             />
+            {/* Dégradé noir en bas pour lisibilité */}
+            <LinearGradient
+              colors={['transparent', 'rgba(0,0,0,0.85)']}
+              style={styles.studioGradient}
+            />
             <View style={styles.studioOverlay}>
               <View style={styles.studioBadge}>
                 <Ionicons name="checkmark-circle" size={14} color="#1DA1F2" />
-                <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 12, marginLeft: 4, letterSpacing: 0.5, textTransform: 'uppercase' }}>{harmooClub.full_name || 'HARMOO STUDIO'}</Text>
+                <Text style={styles.studioBadgeText}>{harmooClub.full_name?.toUpperCase() || 'HARMOO STUDIO'}</Text>
               </View>
               <Text style={styles.studioTitle}>Studio d'enregistrement</Text>
               <Text style={styles.studioSubtitle}>Réserve ta session dès maintenant</Text>
@@ -264,9 +270,11 @@ const styles = StyleSheet.create({
   logoContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   logo: { width: LOGO_WIDTH, height: LOGO_HEIGHT },
   heroSection: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.lg },
-  studioCard: { marginHorizontal: spacing.lg, height: 480, borderRadius: radius.xl, overflow: 'hidden' },
-  studioOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end', padding: spacing.xl },
+  studioCard: { marginHorizontal: spacing.lg, height: 480, borderRadius: radius.xl, overflow: 'hidden', position: 'relative' },
+  studioGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: '60%' },
+  studioOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: spacing.xl },
   studioBadge: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  studioBadgeText: { color: '#FFF', fontWeight: '600', fontSize: 12, marginLeft: 4, letterSpacing: 0.5 },
   studioTitle: { color: '#FFF', fontSize: 20, fontWeight: '400', letterSpacing: 0.8 },
   studioSubtitle: { color: 'rgba(255,255,255,0.85)', fontSize: 14, marginTop: 6, fontWeight: '300' },
   studioBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#DC1B78', alignSelf: 'flex-start', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 30, marginTop: 20 },
