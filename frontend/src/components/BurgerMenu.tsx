@@ -27,7 +27,7 @@ export function BurgerMenu() {
 
   const items: MenuItem[] = [
     { icon: 'home-outline', label: 'Accueil', route: '/(tabs)' },
-    { icon: 'mic-outline', label: 'Réserver une session', route: '/reserve' },
+    { icon: 'mic-outline', label: 'Réserver une session', route: '/freelancer/4b2fa8d2-907b-467d-b7c8-47c8fe624162' },
     { icon: 'people-outline', label: 'Membres', route: '/members' },
     { icon: 'calendar-outline', label: 'Événements', route: '/events' },
     { icon: 'book-outline', label: 'Histoire', route: '/history' },
