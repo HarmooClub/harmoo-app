@@ -176,15 +176,10 @@ export default function ProfileScreen() {
         {/* Harmoo Club membership */}
         {!isAdmin && !user?.is_harmoo_club && (
           <TouchableOpacity
-            style={[styles.clubCard, { borderColor: '#DC1B78' }]}
+            style={[styles.joinClubBtn, { backgroundColor: theme.primary }]}
             onPress={() => router.push('/membership' as any)}
           >
-            <Ionicons name="diamond" size={22} color="#DC1B78" />
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={[typography.labelLarge, { color: theme.title }]}>Harmoo Club</Text>
-              <Text style={[typography.caption, { color: theme.textSecondary }]}>60€ à vie</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#DC1B78" />
+            <Text style={[typography.labelLarge, { color: '#FFF' }]}>Nous rejoindre</Text>
           </TouchableOpacity>
         )}
 
@@ -220,5 +215,6 @@ const styles = StyleSheet.create({
   section: { marginHorizontal: spacing.lg, marginTop: spacing.xl, paddingBottom: spacing.lg, borderBottomWidth: 1 },
   socialInput: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12, borderRadius: radius.md, borderWidth: 1 },
   clubCard: { flexDirection: 'row', alignItems: 'center', marginHorizontal: spacing.lg, marginTop: spacing.xl, padding: spacing.lg, borderRadius: radius.lg, borderWidth: 1.5 },
+  joinClubBtn: { marginHorizontal: spacing.lg, marginTop: spacing.xl, paddingVertical: 14, borderRadius: radius.lg, alignItems: 'center' },
   logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: spacing.lg, marginTop: spacing.xl, paddingVertical: 14, borderRadius: radius.lg, borderWidth: 1 },
 });

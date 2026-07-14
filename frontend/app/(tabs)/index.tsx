@@ -205,23 +205,11 @@ export default function HomeScreen() {
         )}
 
         {/* Harmoo Club Membership */}
-        <View style={styles.sectionHeader}>
-          <Text style={[typography.h3, { color: theme.title }]}>Rejoins le Club</Text>
-        </View>
         <TouchableOpacity
-          style={[styles.clubCard, { borderColor: '#DC1B78' }]}
+          style={[styles.joinClubBtn, { backgroundColor: theme.primary }]}
           onPress={() => router.push('/membership' as any)}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={styles.clubIcon}>
-              <Ionicons name="diamond" size={24} color="#DC1B78" />
-            </View>
-            <View style={{ flex: 1, marginLeft: 14 }}>
-              <Text style={[typography.h3, { color: theme.title }]}>Harmoo Club</Text>
-              <Text style={[typography.caption, { color: theme.textSecondary }]}>Adhésion à vie • 60€</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={22} color="#DC1B78" />
-          </View>
+          <Text style={[typography.labelLarge, { color: '#FFF' }]}>Nous rejoindre</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -274,8 +262,7 @@ const styles = StyleSheet.create({
   youtubeThumbnail: { width: '100%', height: '100%' },
   youtubePlayBtn: { position: 'absolute', top: '50%', left: '50%', transform: [{ translateX: -28 }, { translateY: -28 }], width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
   eventCard: { marginHorizontal: spacing.lg, borderRadius: radius.lg, borderWidth: 1, padding: spacing.lg, flexDirection: 'row', alignItems: 'center' },
-  clubCard: { marginHorizontal: spacing.lg, borderRadius: radius.lg, borderWidth: 1.5, padding: spacing.lg },
-  clubIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(220,27,120,0.1)', justifyContent: 'center', alignItems: 'center' },
+  joinClubBtn: { marginHorizontal: spacing.lg, marginTop: spacing.xl, paddingVertical: 14, borderRadius: radius.lg, alignItems: 'center' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: spacing.xl },
   modalContent: { width: '100%', maxWidth: 400, borderRadius: radius.xl, padding: spacing.xl },
   input: { borderWidth: 1, borderRadius: radius.md, padding: spacing.md, fontSize: 16 },

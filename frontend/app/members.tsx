@@ -111,6 +111,14 @@ export default function MembersScreen() {
         <Text style={[typography.body, { color: theme.textSecondary, textAlign: 'center', marginTop: 40 }]}>Aucun membre pour le moment</Text>
       ) : (
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {/* Join Club Button */}
+          <TouchableOpacity
+            style={[styles.joinBtn, { backgroundColor: theme.primary }]}
+            onPress={() => router.push('/membership' as any)}
+          >
+            <Text style={[typography.labelLarge, { color: '#FFF' }]}>Nous rejoindre</Text>
+          </TouchableOpacity>
+
           <View style={styles.masonryContainer}>
             <View style={styles.column}>
               {leftColumn.map((item, i) => renderMember(item, i, 0))}
@@ -129,6 +137,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
   scrollContent: { padding: spacing.lg, paddingBottom: 40 },
+  joinBtn: { paddingVertical: 14, borderRadius: radius.lg, alignItems: 'center', marginBottom: spacing.lg },
   masonryContainer: { flexDirection: 'row', gap: COLUMN_GAP },
   column: { flex: 1, gap: COLUMN_GAP },
   card: { width: '100%', borderRadius: radius.lg, overflow: 'hidden', position: 'relative' },
