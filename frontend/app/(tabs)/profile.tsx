@@ -173,6 +173,21 @@ export default function ProfileScreen() {
           )}
         </View>
 
+        {/* Harmoo Club membership */}
+        {!isAdmin && !user?.is_harmoo_club && (
+          <TouchableOpacity
+            style={[styles.clubCard, { borderColor: '#DC1B78' }]}
+            onPress={() => router.push('/membership' as any)}
+          >
+            <Ionicons name="diamond" size={22} color="#DC1B78" />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={[typography.labelLarge, { color: theme.title }]}>Harmoo Club</Text>
+              <Text style={[typography.caption, { color: theme.textSecondary }]}>60€ à vie</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#DC1B78" />
+          </TouchableOpacity>
+        )}
+
         {/* Logout */}
         <TouchableOpacity
           style={[styles.logoutBtn, { borderColor: theme.border }]}
