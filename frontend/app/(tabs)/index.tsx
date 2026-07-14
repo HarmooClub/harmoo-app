@@ -105,16 +105,6 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-        {/* Hero: Greeting */}
-        <View style={styles.heroSection}>
-          <Text style={[typography.h1, { color: theme.title }]}>
-            Bonjour{user ? `, ${user.full_name?.split(' ')[0]}` : ''} 👋
-          </Text>
-          <Text style={[typography.body, { color: theme.textSecondary, marginTop: 4 }]}>
-            Bienvenue chez Harmoo Club
-          </Text>
-        </View>
-
         {/* CTA: Book Studio Session */}
         {harmooClub ? (
           <TouchableOpacity

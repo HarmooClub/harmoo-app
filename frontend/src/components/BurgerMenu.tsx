@@ -73,8 +73,7 @@ export function BurgerMenu() {
                   style={[styles.menuItem, { borderBottomColor: theme.divider }]}
                   onPress={() => item.route ? navigate(item.route) : item.action?.()}
                 >
-                  <Ionicons name={item.icon as any} size={22} color={theme.primary} />
-                  <Text style={[typography.body, { color: theme.title, marginLeft: 14 }]}>{item.label}</Text>
+                  <Text style={[typography.body, { color: theme.title }]}>{item.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -86,16 +85,14 @@ export function BurgerMenu() {
                   style={[styles.authBtn, { backgroundColor: theme.primary }]}
                   onPress={() => navigate('/(auth)/login')}
                 >
-                  <Ionicons name="log-in-outline" size={20} color="#FFF" />
-                  <Text style={[typography.labelLarge, { color: '#FFF', marginLeft: 8 }]}>Se connecter</Text>
+                  <Text style={[typography.labelLarge, { color: '#FFF' }]}>Se connecter</Text>
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity
                   style={[styles.authBtn, { backgroundColor: theme.background, borderWidth: 1, borderColor: theme.border }]}
                   onPress={() => { setOpen(false); logout(); router.replace('/(auth)/welcome'); }}
                 >
-                  <Ionicons name="log-out-outline" size={20} color={theme.textSecondary} />
-                  <Text style={[typography.labelLarge, { color: theme.textSecondary, marginLeft: 8 }]}>Se déconnecter</Text>
+                  <Text style={[typography.labelLarge, { color: theme.textSecondary }]}>Se déconnecter</Text>
                 </TouchableOpacity>
               )}
             </View>
