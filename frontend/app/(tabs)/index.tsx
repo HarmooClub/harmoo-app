@@ -203,26 +203,6 @@ export default function HomeScreen() {
             <Text style={[typography.caption, { color: theme.textSecondary }]}>Les événements seront affichés ici</Text>
           </TouchableOpacity>
         )}
-
-        {/* Harmoo Club Membership */}
-        <View style={styles.sectionHeader}>
-          <Text style={[typography.h3, { color: theme.title }]}>Rejoins le Club</Text>
-        </View>
-        <TouchableOpacity
-          style={[styles.clubCard, { borderColor: '#DC1B78' }]}
-          onPress={() => router.push('/membership' as any)}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={styles.clubIcon}>
-              <Ionicons name="diamond" size={24} color="#DC1B78" />
-            </View>
-            <View style={{ flex: 1, marginLeft: 14 }}>
-              <Text style={[typography.h3, { color: theme.title }]}>Harmoo Club</Text>
-              <Text style={[typography.caption, { color: theme.textSecondary }]}>Adhésion à vie • 60€</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={22} color="#DC1B78" />
-          </View>
-        </TouchableOpacity>
       </ScrollView>
 
       {/* YouTube URL Modal */}
