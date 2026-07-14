@@ -134,7 +134,7 @@ export default function HomeScreen() {
                 <Text style={styles.studioBadgeText}>{harmooClub.full_name?.toUpperCase() || 'HARMOO STUDIO'}</Text>
               </View>
               <Text style={styles.studioTitle}>Studio d'enregistrement</Text>
-              <Text style={styles.studioSubtitle}>Réserve ta session dès maintenant</Text>
+              <Text style={styles.studioSubtitle}>Faites grandir votre communauté grâce au podcast</Text>
               <View style={styles.studioBtn}>
                 <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 15 }}>Réserver</Text>
                 <Ionicons name="arrow-forward" size={18} color="#FFF" style={{ marginLeft: 6 }} />
