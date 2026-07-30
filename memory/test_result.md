@@ -166,7 +166,7 @@ frontend:
     implemented: true
     working: false
     file: "frontend/app/booking/[serviceId].tsx"
-    stuck_count: 2
+    stuck_count: 3
     priority: "high"
     needs_retesting: false
     status_history:
@@ -176,12 +176,15 @@ frontend:
       - working: false
         agent: "testing"
         comment: "RE-TEST AFTER VERCEL DEPLOYMENT: STILL BROKEN. Booking navigation remains non-functional on https://harmooclub.com. Button inspection reveals: (1) Button rendered as plain div element with no href or onclick handler, (2) URL stays at https://harmooclub.com/ after clicking 'Réserver', (3) No console errors. Source code (index.tsx lines 95-104) shows correct TouchableOpacity with router.push navigation, but deployed version is NOT running this code. DEPLOYMENT FAILURE: Vercel deployment did not successfully deploy the latest frontend code. The live site is serving an old build. VERIFIED WORKING: Contact page IS accessible from burger menu and displays correctly."
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL DEPLOYMENT ISSUE - ENVIRONMENT VARIABLES NOT INJECTED: Booking page code is CORRECT and includes all required features (date selector with 14 days, time selector 9:00-19:00, Google Calendar button #4285F4, summary card). However, deployed app at https://harmooclub.com is using WRONG backend URL. Console logs show: 'Failed to load resource: https://harmoo-backen.onrender.com/api/services/...' (404 error). The deployed build is NOT reading EXPO_PUBLIC_BACKEND_URL environment variable, falling back to hardcoded 'https://harmoo-backen.onrender.com'. ROOT CAUSE: Environment variables are not being injected into the production build. The code uses 'process.env.EXPO_PUBLIC_BACKEND_URL || fallback' pattern (booking/[serviceId].tsx line 153, freelancer/[id].tsx line 153, index.tsx line 58), but env var is undefined in deployed build. SOLUTION: Rebuild Expo app with proper environment variable injection OR update build configuration to include EXPO_PUBLIC_BACKEND_URL. Verified correct backend URL works: https://april-8-launch.preview.emergentagent.com/api returns valid data."
 
 metadata:
   created_by: "testing_agent"
-  version: "1.3"
-  test_sequence: 4
-  test_date: "2025-01-30"
+  version: "1.4"
+  test_sequence: 5
+  test_date: "2026-07-30"
   test_url: "https://harmooclub.com"
   test_viewport: "iPhone 12 (390x844)"
 
@@ -204,4 +207,6 @@ agent_communication:
     message: "POST-SIMPLIFICATION TEST COMPLETE (Mobile: iPhone 12 390x844): ✅ Burger menu 'Contact' item working - 'Histoire' removed, 'Contact' visible. ✅ Contact page fully functional - email, phone, copy buttons, action buttons all present. ❌ CRITICAL DEPLOYMENT ISSUE: Booking page navigation broken on live site. 'Réserver' button reloads home page instead of navigating to booking form. Code is correct in repository (simplified form with WhatsApp/email buttons implemented), but NOT deployed to production. This is the same deployment issue as the previous badge fix. URGENT: Rebuild and redeploy Expo app to push booking simplification changes to production."
   - agent: "testing"
     message: "POST-VERCEL DEPLOYMENT RE-TEST (Mobile: iPhone 12 390x844): ✅ Contact page verified working - accessible from burger menu, displays email (harmoo.app@gmail.com), phone (0782183803), copy buttons, and action buttons correctly. ❌ CRITICAL: Booking navigation STILL BROKEN after Vercel deployment. Button inspection shows deployed version is a plain div with no navigation logic (no href, no onclick). Source code has correct router.push implementation (index.tsx lines 95-104), but live site is NOT running this code. DEPLOYMENT FAILURE: Vercel did not successfully deploy the latest frontend build. Stuck count increased to 2. URGENT ACTION REQUIRED: Investigate Vercel deployment process - build may be failing, using wrong branch, or serving cached version."
+  - agent: "testing"
+    message: "BOOKING PAGE GOOGLE CALENDAR INTEGRATION TEST (Mobile: iPhone 12 390x844): ❌ CRITICAL ENVIRONMENT VARIABLE ISSUE: Booking page code is FULLY IMPLEMENTED and CORRECT with all required features: ✅ Date selector (14 days horizontal scroll) - code verified at booking/[serviceId].tsx lines 63-95. ✅ Time selector (9:00-19:00 grid) - code verified at lines 98-117. ✅ Google Calendar button with correct blue color (#4285F4) - code verified at lines 249-256. ✅ Summary card - code verified at lines 234-244. ✅ Google Calendar integration function - code verified at lines 12-32, 157-182. HOWEVER, deployed app at https://harmooclub.com shows 'Service non trouvé' error. Console logs reveal: 'Failed to load resource: https://harmoo-backen.onrender.com/api/services/...' (404). ROOT CAUSE: EXPO_PUBLIC_BACKEND_URL environment variable is NOT being injected into production build. Code uses fallback pattern 'process.env.EXPO_PUBLIC_BACKEND_URL || https://harmoo-backen.onrender.com' but env var is undefined in deployed build. Verified correct backend (https://april-8-launch.preview.emergentagent.com/api) returns valid service data. SOLUTION: Rebuild Expo app with proper environment variable injection. Stuck count increased to 3."
 ---
