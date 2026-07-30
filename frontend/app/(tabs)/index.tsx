@@ -95,13 +95,7 @@ export default function HomeScreen() {
           <TouchableOpacity
             style={styles.studioCard}
             activeOpacity={0.9}
-            onPress={() => {
-              if (harmooClub.services?.length > 0) {
-                router.push({ pathname: '/booking/[serviceId]', params: { serviceId: harmooClub.services[0].id } });
-              } else {
-                router.push({ pathname: '/freelancer/[id]', params: { id: harmooClub.id } });
-              }
-            }}
+            onPress={() => router.push({ pathname: '/freelancer/[id]', params: { id: harmooClub.id } })}
           >
             <Image source={{ uri: getAvatarUrl(harmooClub.id) }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
             <LinearGradient colors={['transparent', 'rgba(10,14,26,0.95)']} style={styles.studioGradient} />
