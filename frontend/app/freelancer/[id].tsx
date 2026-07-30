@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, Linking } from 'react-native';
-import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,7 +9,6 @@ import { Card } from '../../src/components/Card';
 import { spacing, typography, radius } from '../../src/theme';
 
 const { width, height } = Dimensions.get('window');
-const HEADER_HEIGHT = height * 0.4;
 
 export default function FreelancerDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -54,41 +52,15 @@ export default function FreelancerDetailScreen() {
     );
   }
 
-  const avatarUrl = freelancer.avatar;
-
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Header Image */}
-      <View style={styles.headerImage}>
-        {avatarUrl ? (
-          <Image 
-            source={{ uri: avatarUrl }} 
-            style={styles.profileImage} 
-            contentFit="cover" 
-            cachePolicy="memory-disk" 
-            transition={300} 
-          />
-        ) : (
-          <View style={[styles.profileImage, { backgroundColor: theme.primary + '20' }]}>
-            <View style={styles.profilePlaceholder}>
-              <Ionicons name="business" size={80} color={theme.primary} />
-            </View>
-          </View>
-        )}
-      </View>
-
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Back Button */}
-      <SafeAreaView style={styles.headerButtons} edges={['top']}>
-        <TouchableOpacity style={styles.headerBtn} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={22} color="#FFF" />
-        </TouchableOpacity>
-      </SafeAreaView>
+      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+        <Ionicons name="chevron-back" size={24} color={theme.title} />
+      </TouchableOpacity>
 
       {/* Content */}
-      <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
-        <View style={{ height: HEADER_HEIGHT }} />
-
-        <View style={[styles.contentContainer, { backgroundColor: theme.background }]}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           {/* Studio Info Card */}
           <Card style={styles.studioCard} padding={spacing.xl}>
             <Text style={[styles.studioTitle, { color: theme.title }]}>Harmoo Studio</Text>
@@ -142,10 +114,9 @@ export default function FreelancerDetailScreen() {
             <Text style={styles.ctaText}>Réserver une session</Text>
           </TouchableOpacity>
 
-          <View style={{ height: 60 }} />
-        </View>
-      </ScrollView>
-    </View>
+          <View style={{ height: 40 }} />
+        </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -158,47 +129,19 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     justifyContent: 'center' 
   },
-  headerImage: { 
-    position: 'absolute', 
-    top: 0, 
-    left: 0, 
-    right: 0, 
-    height: HEADER_HEIGHT, 
-    zIndex: 0 
-  },
-  profileImage: { 
-    width: '100%', 
-    height: '100%' 
-  },
-  profilePlaceholder: {
-    flex: 1,
+  backBtn: {
+    marginLeft: spacing.lg,
+    marginTop: spacing.sm,
+    width: 42,
+    height: 42,
+    borderRadius: radius.lg,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerButtons: {
-    position: 'absolute', 
-    top: 0, 
-    left: 0, 
-    right: 0, 
-    zIndex: 10,
-    flexDirection: 'row', 
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg, 
-    paddingTop: spacing.sm,
-  },
-  headerBtn: {
-    width: 42, 
-    height: 42, 
-    borderRadius: radius.lg,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    alignItems: 'center', 
-    justifyContent: 'center',
-  },
-  contentContainer: {
-    borderTopLeftRadius: radius.xxl,
-    borderTopRightRadius: radius.xxl,
-    marginTop: -24,
+  scrollContent: {
     paddingTop: spacing.lg,
+    paddingBottom: 40,
   },
   studioCard: { 
     marginHorizontal: spacing.xl,
