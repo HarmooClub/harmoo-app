@@ -280,7 +280,7 @@ export default function FreelancerDetailScreen() {
                 <TouchableOpacity
                   key={service.id || idx}
                   style={[styles.serviceCard, { backgroundColor: theme.background }]}
-                  onPress={() => router.push({ pathname: '/booking/[serviceId]', params: { serviceId: service.id } })}
+                  onPress={() => Linking.openURL('https://calendar.app.google/7rokBLb3nA8ALS6h8')}
                 >
                   <View style={{ flex: 1 }}>
                     <Text style={[typography.h4, { color: theme.title }]}>{service.title}</Text>
@@ -398,13 +398,7 @@ export default function FreelancerDetailScreen() {
       <View style={[styles.bottomBar, { backgroundColor: theme.card, borderTopColor: theme.divider }]}>
         <TouchableOpacity
           style={[styles.bookBtn, { backgroundColor: theme.primary, flex: 1 }]}
-          onPress={() => {
-            if (freelancer.services?.length > 0) {
-              router.push({ pathname: '/booking/[serviceId]', params: { serviceId: freelancer.services[0].id } });
-            } else {
-              Alert.alert('Info', 'Ce prestataire n\'a pas encore de service');
-            }
-          }}
+          onPress={() => Linking.openURL('https://calendar.app.google/7rokBLb3nA8ALS6h8')}
         >
           <Text style={[typography.labelLarge, { color: '#FFF' }]}>Réserver</Text>
         </TouchableOpacity>
