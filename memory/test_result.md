@@ -166,18 +166,21 @@ frontend:
     implemented: true
     working: false
     file: "frontend/app/booking/[serviceId].tsx"
-    stuck_count: 1
+    stuck_count: 2
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "testing"
         comment: "CRITICAL: Booking page navigation is BROKEN on live site. The 'Réserver' button on studio card (index.tsx lines 98-104) does NOT navigate to booking page - it just reloads the home page. Code in repository is correct (shows simplified form with name, email, date, message fields + WhatsApp and email buttons), but live deployment is not working. DEPLOYMENT ISSUE: Similar to previous badge fix issue, the new booking simplification code has not been deployed to production. Action required: Rebuild and redeploy Expo app or publish OTA update."
+      - working: false
+        agent: "testing"
+        comment: "RE-TEST AFTER VERCEL DEPLOYMENT: STILL BROKEN. Booking navigation remains non-functional on https://harmooclub.com. Button inspection reveals: (1) Button rendered as plain div element with no href or onclick handler, (2) URL stays at https://harmooclub.com/ after clicking 'Réserver', (3) No console errors. Source code (index.tsx lines 95-104) shows correct TouchableOpacity with router.push navigation, but deployed version is NOT running this code. DEPLOYMENT FAILURE: Vercel deployment did not successfully deploy the latest frontend code. The live site is serving an old build. VERIFIED WORKING: Contact page IS accessible from burger menu and displays correctly."
 
 metadata:
   created_by: "testing_agent"
-  version: "1.2"
-  test_sequence: 3
+  version: "1.3"
+  test_sequence: 4
   test_date: "2025-01-30"
   test_url: "https://harmooclub.com"
   test_viewport: "iPhone 12 (390x844)"
@@ -199,4 +202,6 @@ agent_communication:
     message: "DESIGN & PERFORMANCE TEST COMPLETE: Tested all pages (Home, Members, Events, Profile, Membership) on mobile viewport (iPhone 12: 390x844). ALL REQUIREMENTS MET: ✅ Premium dark theme (#0A0E1A background) implemented consistently across all pages. ✅ All cards have visible shadows and rounded corners (12-20px). ✅ Page load times are excellent (0.79s - 3.85s). ✅ White text on dark backgrounds for good contrast. ✅ Badge now shows 'HARMOO STUDIO' correctly. ✅ Members page masonry layout working with shadows. ✅ All pages have consistent premium styling. Screenshots saved for all pages. No critical issues found."
   - agent: "testing"
     message: "POST-SIMPLIFICATION TEST COMPLETE (Mobile: iPhone 12 390x844): ✅ Burger menu 'Contact' item working - 'Histoire' removed, 'Contact' visible. ✅ Contact page fully functional - email, phone, copy buttons, action buttons all present. ❌ CRITICAL DEPLOYMENT ISSUE: Booking page navigation broken on live site. 'Réserver' button reloads home page instead of navigating to booking form. Code is correct in repository (simplified form with WhatsApp/email buttons implemented), but NOT deployed to production. This is the same deployment issue as the previous badge fix. URGENT: Rebuild and redeploy Expo app to push booking simplification changes to production."
+  - agent: "testing"
+    message: "POST-VERCEL DEPLOYMENT RE-TEST (Mobile: iPhone 12 390x844): ✅ Contact page verified working - accessible from burger menu, displays email (harmoo.app@gmail.com), phone (0782183803), copy buttons, and action buttons correctly. ❌ CRITICAL: Booking navigation STILL BROKEN after Vercel deployment. Button inspection shows deployed version is a plain div with no navigation logic (no href, no onclick). Source code has correct router.push implementation (index.tsx lines 95-104), but live site is NOT running this code. DEPLOYMENT FAILURE: Vercel did not successfully deploy the latest frontend build. Stuck count increased to 2. URGENT ACTION REQUIRED: Investigate Vercel deployment process - build may be failing, using wrong branch, or serving cached version."
 ---
