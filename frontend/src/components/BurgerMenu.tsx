@@ -1,29 +1,30 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Pressable, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { spacing, radius, typography } from '../theme';
+import { spacing, radius, shadows } from '../theme';
 
 const HARMOO_ADMIN_EMAIL = 'harmoo.app@gmail.com';
 
-type MenuItem = { icon: string; label: string; route?: string; action?: () => void };
+interface MenuItem {
+  icon: string;
+  label: string;
+  route?: string;
+  action?: () => void;
+}
 
 export function BurgerMenu() {
-  const [open, setOpen] = useState(false);
-  const { user, logout } = useAuth();
   const { theme } = useTheme();
+  const { user, logout } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const isAdmin = user?.email === HARMOO_ADMIN_EMAIL;
+  const [open, setOpen] = useState(false);
 
-  const navigate = (route: string) => {
-    setOpen(false);
-    setTimeout(() => router.push(route as any), 150);
-  };
+  const isAdmin = user?.email === HARMOO_ADMIN_EMAIL;
 
   const items: MenuItem[] = [
     { icon: 'home-outline', label: 'Accueil', route: '/(tabs)' },
@@ -33,47 +34,46 @@ export function BurgerMenu() {
     { icon: 'book-outline', label: 'Histoire', route: '/history' },
   ];
 
+  if (isAdmin) {
+    items.push({ icon: 'construct-outline', label: 'Mes services', route: '/my-services' });
+    items.push({ icon: 'cash-outline', label: 'Caisse', route: '/cash-register' });
+  }
+
   if (user) {
     items.push({ icon: 'person-outline', label: 'Mon profil', route: '/(tabs)/profile' });
-    items.push({ icon: 'receipt-outline', label: 'Mes réservations', route: '/(tabs)/bookings' });
-    if (isAdmin) {
-      items.push({ icon: 'construct-outline', label: 'Mes services', route: '/my-services' });
-      items.push({ icon: 'wallet-outline', label: 'Caisse', route: '/cash-register' });
-    }
   }
+
+  const navigate = (route: string) => {
+    setOpen(false);
+    setTimeout(() => router.push(route as any), 100);
+  };
 
   return (
     <>
-      {/* Burger icon */}
-      <TouchableOpacity onPress={() => setOpen(true)} style={styles.burgerBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-        <Ionicons name="menu" size={28} color={theme.title} />
+      <TouchableOpacity style={styles.burgerBtn} onPress={() => setOpen(true)}>
+        <Ionicons name="menu" size={26} color={theme.title} />
       </TouchableOpacity>
 
-      {/* Menu overlay */}
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.overlay} onPress={() => setOpen(false)}>
-          <Pressable onPress={(e) => e.stopPropagation()} style={[styles.drawer, { backgroundColor: theme.card, paddingTop: insets.top + 16 }]}>
+          <Pressable style={[styles.drawer, { backgroundColor: theme.card, paddingTop: insets.top + 16 }]} onPress={(e) => e.stopPropagation()}>
             {/* Header with Logo */}
             <View style={styles.drawerHeader}>
-              <Image
-                source={require('../../assets/harmoo-logo.png')}
-                style={styles.drawerLogo}
-                contentFit="contain"
-              />
-              <TouchableOpacity onPress={() => setOpen(false)}>
-                <Ionicons name="close" size={28} color={theme.title} />
+              <Image source={require('../../assets/harmoo-logo.png')} style={styles.drawerLogo} contentFit="contain" />
+              <TouchableOpacity style={[styles.closeBtn, { backgroundColor: theme.border }]} onPress={() => setOpen(false)}>
+                <Ionicons name="close" size={20} color={theme.title} />
               </TouchableOpacity>
             </View>
 
-            {/* Menu items */}
+            {/* Menu Items */}
             <View style={styles.menuItems}>
               {items.map((item, i) => (
                 <TouchableOpacity
                   key={i}
-                  style={[styles.menuItem, { borderBottomColor: theme.divider }]}
+                  style={[styles.menuItem, { borderBottomColor: theme.border }]}
                   onPress={() => item.route ? navigate(item.route) : item.action?.()}
                 >
-                  <Text style={[typography.body, { color: theme.title }]}>{item.label}</Text>
+                  <Text style={[styles.menuText, { color: theme.title }]}>{item.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -81,18 +81,15 @@ export function BurgerMenu() {
             {/* Auth buttons */}
             <View style={styles.drawerFooter}>
               {!user ? (
-                <TouchableOpacity
-                  style={[styles.authBtn, { backgroundColor: theme.primary }]}
-                  onPress={() => navigate('/(auth)/login')}
-                >
-                  <Text style={[typography.labelLarge, { color: '#FFF' }]}>Se connecter</Text>
+                <TouchableOpacity style={styles.authBtn} onPress={() => navigate('/(auth)/login')}>
+                  <Text style={styles.authBtnText}>Se connecter</Text>
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity
-                  style={[styles.authBtn, { backgroundColor: theme.background, borderWidth: 1, borderColor: theme.border }]}
+                  style={[styles.logoutBtn, { borderColor: theme.border }]}
                   onPress={() => { setOpen(false); logout(); router.replace('/(auth)/welcome'); }}
                 >
-                  <Text style={[typography.labelLarge, { color: theme.textSecondary }]}>Se déconnecter</Text>
+                  <Text style={[styles.logoutText, { color: theme.textSecondary }]}>Se déconnecter</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -105,12 +102,17 @@ export function BurgerMenu() {
 
 const styles = StyleSheet.create({
   burgerBtn: { padding: 4 },
-  overlay: { flex: 1, flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.4)' },
-  drawer: { width: '80%', maxWidth: 320, height: '100%', paddingHorizontal: spacing.lg },
-  drawerHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xl, paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.06)' },
+  overlay: { flex: 1, flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.6)' },
+  drawer: { width: '80%', maxWidth: 320, height: '100%', paddingHorizontal: spacing.lg, ...shadows.lg },
+  drawerHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xl, paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' },
   drawerLogo: { width: 120, height: 24 },
+  closeBtn: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
   menuItems: { flex: 1 },
-  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 0.5 },
+  menuItem: { paddingVertical: 16, borderBottomWidth: 0.5 },
+  menuText: { fontSize: 16, fontWeight: '500' },
   drawerFooter: { paddingVertical: spacing.xl },
-  authBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.lg },
+  authBtn: { backgroundColor: '#DC1B78', paddingVertical: 14, borderRadius: 12, alignItems: 'center', ...shadows.glow },
+  authBtnText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
+  logoutBtn: { borderWidth: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
+  logoutText: { fontSize: 15, fontWeight: '500' },
 });

@@ -8,7 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../src/contexts/ThemeContext';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { BurgerMenu } from '../../src/components/BurgerMenu';
-import { spacing, radius } from '../../src/theme';
+import { spacing, radius, shadows } from '../../src/theme';
 import api, { siteSettingsApi, eventsApi } from '../../src/services/api';
 
 const { width } = Dimensions.get('window');
@@ -223,17 +223,17 @@ const styles = StyleSheet.create({
   logoContainer: { flex: 1, alignItems: 'center' },
   logo: { width: LOGO_WIDTH, height: LOGO_HEIGHT },
   headerIcons: { flexDirection: 'row', gap: 8 },
-  iconBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+  iconBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', ...shadows.sm },
   
-  // Studio Card - Premium style
-  studioCard: { marginHorizontal: spacing.lg, height: 480, borderRadius: 20, overflow: 'hidden', position: 'relative' },
+  // Studio Card - Premium style with shadow
+  studioCard: { marginHorizontal: spacing.lg, height: 480, borderRadius: 20, overflow: 'hidden', position: 'relative', ...shadows.lg },
   studioGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: '65%' },
   studioOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: spacing.xl },
   studioBadge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', backgroundColor: 'rgba(59,130,246,0.15)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(59,130,246,0.3)', marginBottom: 12 },
   studioBadgeText: { color: '#FFF', fontWeight: '600', fontSize: 11, marginLeft: 6, letterSpacing: 0.5 },
   studioTitle: { color: '#FFF', fontSize: 28, fontWeight: '700', letterSpacing: -0.5, lineHeight: 34 },
   studioSubtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 15, marginTop: 8, lineHeight: 22 },
-  studioBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#DC1B78', alignSelf: 'flex-start', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12, marginTop: 20, gap: 8 },
+  studioBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#DC1B78', alignSelf: 'flex-start', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12, marginTop: 20, gap: 8, ...shadows.glow },
   studioBtnText: { color: '#FFF', fontWeight: '600', fontSize: 15 },
   
   // Section headers
@@ -241,29 +241,29 @@ const styles = StyleSheet.create({
   sectionTitle: { color: '#FFF', fontSize: 20, fontWeight: '700', letterSpacing: -0.3 },
   seeAllText: { fontSize: 14, fontWeight: '600' },
   
-  // YouTube card
-  youtubeCard: { marginHorizontal: spacing.lg, borderRadius: 16, overflow: 'hidden', height: 200, position: 'relative' },
+  // YouTube card with shadow
+  youtubeCard: { marginHorizontal: spacing.lg, borderRadius: 16, overflow: 'hidden', height: 200, position: 'relative', ...shadows.md },
   youtubeThumbnail: { width: '100%', height: '100%' },
-  youtubePlayBtn: { position: 'absolute', top: '50%', left: '50%', transform: [{ translateX: -26 }, { translateY: -26 }], width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(255,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
+  youtubePlayBtn: { position: 'absolute', top: '50%', left: '50%', transform: [{ translateX: -26 }, { translateY: -26 }], width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(255,0,0,0.9)', justifyContent: 'center', alignItems: 'center', ...shadows.md },
   
-  // Placeholder card
-  placeholderCard: { marginHorizontal: spacing.lg, borderRadius: 16, borderWidth: 1, padding: spacing.xl, alignItems: 'center', justifyContent: 'center', minHeight: 120 },
+  // Placeholder card with shadow
+  placeholderCard: { marginHorizontal: spacing.lg, borderRadius: 16, borderWidth: 1, padding: spacing.xl, alignItems: 'center', justifyContent: 'center', minHeight: 120, ...shadows.sm },
   placeholderIcon: { width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
   placeholderText: { fontSize: 14, fontWeight: '500' },
   
-  // Event card
-  eventCard: { marginHorizontal: spacing.lg, borderRadius: 16, borderWidth: 1, padding: spacing.lg, flexDirection: 'row', alignItems: 'center' },
+  // Event card with shadow
+  eventCard: { marginHorizontal: spacing.lg, borderRadius: 16, borderWidth: 1, padding: spacing.lg, flexDirection: 'row', alignItems: 'center', ...shadows.sm },
   eventIcon: { width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center' },
   eventTitle: { fontSize: 16, fontWeight: '600' },
   eventDate: { fontSize: 13, marginTop: 2 },
   
-  // Join button
-  joinClubBtn: { marginHorizontal: spacing.lg, marginTop: spacing.xxl, paddingVertical: 16, borderRadius: 12, alignItems: 'center', backgroundColor: '#DC1B78' },
+  // Join button with glow
+  joinClubBtn: { marginHorizontal: spacing.lg, marginTop: spacing.xxl, paddingVertical: 16, borderRadius: 12, alignItems: 'center', backgroundColor: '#DC1B78', ...shadows.glow },
   joinClubText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
   
-  // Modal
+  // Modal with shadow
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: spacing.xl },
-  modalContent: { width: '100%', maxWidth: 400, borderRadius: 20, padding: spacing.xl },
+  modalContent: { width: '100%', maxWidth: 400, borderRadius: 20, padding: spacing.xl, ...shadows.lg },
   modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: spacing.lg },
   input: { borderWidth: 1, borderRadius: 12, padding: spacing.md, fontSize: 15 },
   modalButtons: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.xl },

@@ -189,38 +189,58 @@ export const shadows = {
   sm: Platform.select({
     ios: {
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.06,
-      shadowRadius: 3,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
     },
     android: {
-      elevation: 2,
+      elevation: 3,
     },
-    default: {},
+    default: {
+      boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+    },
   }),
   md: Platform.select({
     ios: {
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
-      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 12,
     },
     android: {
-      elevation: 4,
+      elevation: 6,
     },
-    default: {},
+    default: {
+      boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+    },
   }),
   lg: Platform.select({
     ios: {
       shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.25,
+      shadowRadius: 20,
+    },
+    android: {
+      elevation: 12,
+    },
+    default: {
+      boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+    },
+  }),
+  glow: Platform.select({
+    ios: {
+      shadowColor: '#DC1B78',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.12,
-      shadowRadius: 16,
+      shadowOpacity: 0.3,
+      shadowRadius: 12,
     },
     android: {
       elevation: 8,
     },
-    default: {},
+    default: {
+      boxShadow: '0 4px 20px rgba(220,27,120,0.3)',
+    },
   }),
 };
 
