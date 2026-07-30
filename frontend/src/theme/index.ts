@@ -42,12 +42,12 @@ export const palette = {
   info: '#3B82F6',
   infoSoft: '#3B82F615',
 
-  // Dark mode
-  darkBg: '#0F0F14',
-  darkCard: '#1A1A24',
-  darkBorder: '#2A2A38',
-  darkText: '#E0E0E8',
-  darkTitle: '#F5F5FA',
+  // Dark mode - Premium dark blue
+  darkBg: '#0A0E1A',
+  darkCard: '#121829',
+  darkBorder: '#1E2A45',
+  darkText: '#B8C0D2',
+  darkTitle: '#FFFFFF',
 };
 
 // ==================== SPACING (8pt grid) ====================
@@ -225,18 +225,19 @@ export const shadows = {
 };
 
 // ==================== LIGHT & DARK THEMES ====================
-export const lightTheme = {
-  background: palette.gray50,
-  card: palette.white,
-  title: palette.gray900,
-  text: palette.gray600,
-  textSecondary: palette.gray400,
-  border: palette.gray200,
-  borderLight: palette.gray100,
+// Premium dark theme for both modes (as requested)
+const premiumDark = {
+  background: '#0A0E1A',
+  card: '#121829',
+  title: '#FFFFFF',
+  text: '#B8C0D2',
+  textSecondary: '#6B7A99',
+  border: '#1E2A45',
+  borderLight: '#151D30',
   primary: palette.primary,
-  primarySoft: palette.primarySoft,
-  secondary: palette.secondary,
-  secondarySoft: palette.secondarySoft,
+  primarySoft: 'rgba(220,27,120,0.15)',
+  secondary: '#3B82F6',
+  secondarySoft: 'rgba(59,130,246,0.15)',
   success: palette.success,
   successSoft: palette.successSoft,
   error: palette.error,
@@ -247,38 +248,13 @@ export const lightTheme = {
   infoSoft: palette.infoSoft,
   accent: palette.accent,
   accentSoft: palette.accentSoft,
-  overlay: 'rgba(0,0,0,0.4)',
-  skeleton: palette.gray200,
-  divider: palette.gray100,
-  inputBg: palette.white,
+  overlay: 'rgba(0,0,0,0.7)',
+  skeleton: '#1E2A45',
+  divider: '#1E2A45',
+  inputBg: '#121829',
 };
 
-export const darkTheme = {
-  background: palette.darkBg,
-  card: palette.darkCard,
-  title: palette.darkTitle,
-  text: palette.darkText,
-  textSecondary: palette.gray500,
-  border: palette.darkBorder,
-  borderLight: '#1E1E2A',
-  primary: palette.primary,
-  primarySoft: palette.primarySoft,
-  secondary: palette.secondary,
-  secondarySoft: palette.secondarySoft,
-  success: palette.success,
-  successSoft: palette.successSoft,
-  error: palette.error,
-  errorSoft: palette.errorSoft,
-  warning: palette.warning,
-  warningSoft: palette.warningSoft,
-  info: palette.info,
-  infoSoft: palette.infoSoft,
-  accent: palette.accent,
-  accentSoft: palette.accentSoft,
-  overlay: 'rgba(0,0,0,0.6)',
-  skeleton: palette.darkBorder,
-  divider: palette.darkBorder,
-  inputBg: palette.darkCard,
-};
+export const lightTheme = premiumDark;
+export const darkTheme = premiumDark;
 
 export type ThemeColors = typeof lightTheme;
