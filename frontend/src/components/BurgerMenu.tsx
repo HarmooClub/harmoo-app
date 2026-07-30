@@ -31,7 +31,7 @@ export function BurgerMenu() {
     { icon: 'mic-outline', label: 'Réserver une session', route: '/freelancer/4b2fa8d2-907b-467d-b7c8-47c8fe624162' },
     { icon: 'people-outline', label: 'Membres', route: '/members' },
     { icon: 'calendar-outline', label: 'Événements', route: '/events' },
-    { icon: 'book-outline', label: 'Histoire', route: '/history' },
+    { icon: 'mail-outline', label: 'Contact', route: '/contact' },
   ];
 
   if (isAdmin) {
