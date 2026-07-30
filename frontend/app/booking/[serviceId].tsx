@@ -1,5 +1,5 @@
 import React, { useState, useEffect, memo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Linking, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Linking, TextInput, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,10 +9,29 @@ import { useAuth } from '../../src/contexts/AuthContext';
 import { servicesApi, usersApi } from '../../src/services/api';
 import { spacing, shadows } from '../../src/theme';
 
-const CONTACT_EMAIL = 'harmoo.app@gmail.com';
-const CONTACT_PHONE = '33782183803'; // Format international pour WhatsApp
+// Google Calendar link generator
+function createGoogleCalendarLink(params: {
+  title: string;
+  description: string;
+  location?: string;
+  startDate: Date;
+  endDate: Date;
+}) {
+  const formatDate = (date: Date) => {
+    return date.toISOString().replace(/-|:|\.\d{3}/g, '');
+  };
+  
+  const url = new URL('https://calendar.google.com/calendar/render');
+  url.searchParams.set('action', 'TEMPLATE');
+  url.searchParams.set('text', params.title);
+  url.searchParams.set('details', params.description);
+  url.searchParams.set('dates', `${formatDate(params.startDate)}/${formatDate(params.endDate)}`);
+  if (params.location) url.searchParams.set('location', params.location);
+  
+  return url.toString();
+}
 
-// Memoized service card for faster initial render
+// Memoized service card
 const ServiceCard = memo(({ service, freelancer, theme, getAvatarUrl }: any) => (
   <View style={[styles.serviceCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
     {freelancer && (
@@ -40,6 +59,63 @@ const ServiceCard = memo(({ service, freelancer, theme, getAvatarUrl }: any) => 
   </View>
 ));
 
+// Date picker component
+const DateSelector = memo(({ selectedDate, onSelect, theme }: any) => {
+  const dates = [];
+  const today = new Date();
+  
+  for (let i = 1; i <= 14; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+    dates.push(date);
+  }
+  
+  const formatDay = (date: Date) => {
+    const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+    return days[date.getDay()];
+  };
+  
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateScroll}>
+      {dates.map((date, i) => {
+        const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
+        return (
+          <TouchableOpacity
+            key={i}
+            style={[styles.dateItem, isSelected && styles.dateItemSelected, { borderColor: isSelected ? '#DC1B78' : theme.border }]}
+            onPress={() => onSelect(date)}
+          >
+            <Text style={[styles.dateDay, { color: isSelected ? '#DC1B78' : theme.textSecondary }]}>{formatDay(date)}</Text>
+            <Text style={[styles.dateNum, { color: isSelected ? '#DC1B78' : theme.title }]}>{date.getDate()}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </ScrollView>
+  );
+});
+
+// Time picker component  
+const TimeSelector = memo(({ selectedTime, onSelect, theme }: any) => {
+  const times = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
+  
+  return (
+    <View style={styles.timeGrid}>
+      {times.map((time) => {
+        const isSelected = selectedTime === time;
+        return (
+          <TouchableOpacity
+            key={time}
+            style={[styles.timeItem, isSelected && styles.timeItemSelected, { borderColor: isSelected ? '#DC1B78' : theme.border, backgroundColor: isSelected ? 'rgba(220,27,120,0.15)' : theme.card }]}
+            onPress={() => onSelect(time)}
+          >
+            <Text style={[styles.timeText, { color: isSelected ? '#DC1B78' : theme.title }]}>{time}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+});
+
 export default function BookingScreen() {
   const { serviceId } = useLocalSearchParams<{ serviceId: string }>();
   const { theme } = useTheme();
@@ -49,21 +125,12 @@ export default function BookingScreen() {
   const [service, setService] = useState<any>(null);
   const [freelancer, setFreelancer] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [name, setName] = useState(user?.full_name || '');
-  const [email, setEmail] = useState(user?.email || '');
-  const [message, setMessage] = useState('');
-  const [preferredDate, setPreferredDate] = useState('');
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
   useEffect(() => {
     if (serviceId) loadService();
   }, [serviceId]);
-
-  useEffect(() => {
-    if (user) {
-      setName(user.full_name || '');
-      setEmail(user.email || '');
-    }
-  }, [user]);
 
   const loadService = async () => {
     try {
@@ -87,30 +154,31 @@ export default function BookingScreen() {
     return `${base}/api/avatar/${id}`;
   };
 
-  const sendWhatsApp = () => {
-    const text = `🎙️ *Demande de réservation - Harmoo Studio*\n\n` +
-      `*Service:* ${service?.title}\n` +
-      `*Prix:* ${service?.price}€\n` +
-      `*Nom:* ${name}\n` +
-      `*Email:* ${email}\n` +
-      `*Date souhaitée:* ${preferredDate || 'À définir'}\n` +
-      `*Message:* ${message || 'Aucun'}`;
-    
-    const url = `https://wa.me/${CONTACT_PHONE}?text=${encodeURIComponent(text)}`;
-    Linking.openURL(url);
-  };
+  const openGoogleCalendar = () => {
+    if (!selectedDate || !selectedTime) {
+      Alert.alert('Sélection requise', 'Veuillez choisir une date et un horaire');
+      return;
+    }
 
-  const sendEmail = () => {
-    const subject = `Réservation - ${service?.title}`;
-    const body = `Bonjour,\n\nJe souhaite réserver une session.\n\n` +
-      `Service: ${service?.title}\n` +
-      `Prix: ${service?.price}€\n` +
-      `Nom: ${name}\n` +
-      `Email: ${email}\n` +
-      `Date souhaitée: ${preferredDate || 'À définir'}\n\n` +
-      `Message: ${message || 'Aucun'}\n\nCordialement`;
+    // Create start date
+    const [hours, minutes] = selectedTime.split(':').map(Number);
+    const startDate = new Date(selectedDate);
+    startDate.setHours(hours, minutes, 0, 0);
     
-    Linking.openURL(`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+    // Create end date (add service duration)
+    const durationMinutes = service.duration_hours ? service.duration_hours * 60 : (service.duration_minutes || 60);
+    const endDate = new Date(startDate);
+    endDate.setMinutes(endDate.getMinutes() + durationMinutes);
+
+    const calendarUrl = createGoogleCalendarLink({
+      title: `🎙️ ${service.title} - Harmoo Studio`,
+      description: `Réservation Harmoo Studio\n\nService: ${service.title}\nPrix: ${service.price}€\nDurée: ${durationMinutes} min\n\nContact: harmoo.app@gmail.com\nTél: 07 82 18 38 03`,
+      location: 'Harmoo Studio',
+      startDate,
+      endDate,
+    });
+
+    Linking.openURL(calendarUrl);
   };
 
   if (isLoading) {
@@ -150,63 +218,43 @@ export default function BookingScreen() {
         {/* Service Card */}
         <ServiceCard service={service} freelancer={freelancer} theme={theme} getAvatarUrl={getAvatarUrl} />
 
-        {/* Contact Form */}
-        <View style={[styles.formCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          <Text style={[styles.formTitle, { color: theme.title }]}>Vos informations</Text>
-          
-          <TextInput
-            style={[styles.input, { backgroundColor: theme.inputBg, color: theme.title, borderColor: theme.border }]}
-            value={name}
-            onChangeText={setName}
-            placeholder="Votre nom"
-            placeholderTextColor={theme.textSecondary}
-          />
-          
-          <TextInput
-            style={[styles.input, { backgroundColor: theme.inputBg, color: theme.title, borderColor: theme.border }]}
-            value={email}
-            onChangeText={setEmail}
-            placeholder="Votre email"
-            placeholderTextColor={theme.textSecondary}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          
-          <TextInput
-            style={[styles.input, { backgroundColor: theme.inputBg, color: theme.title, borderColor: theme.border }]}
-            value={preferredDate}
-            onChangeText={setPreferredDate}
-            placeholder="Date souhaitée (ex: Samedi 20 janvier)"
-            placeholderTextColor={theme.textSecondary}
-          />
-          
-          <TextInput
-            style={[styles.textArea, { backgroundColor: theme.inputBg, color: theme.title, borderColor: theme.border }]}
-            value={message}
-            onChangeText={setMessage}
-            placeholder="Message (optionnel)"
-            placeholderTextColor={theme.textSecondary}
-            multiline
-            numberOfLines={3}
-            textAlignVertical="top"
-          />
+        {/* Date Selection */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.title }]}>Choisir une date</Text>
+          <DateSelector selectedDate={selectedDate} onSelect={setSelectedDate} theme={theme} />
         </View>
 
-        {/* Action Buttons */}
-        <TouchableOpacity style={styles.whatsappBtn} onPress={sendWhatsApp}>
-          <Ionicons name="logo-whatsapp" size={22} color="#FFF" />
-          <Text style={styles.whatsappText}>Réserver via WhatsApp</Text>
-        </TouchableOpacity>
+        {/* Time Selection */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.title }]}>Choisir un horaire</Text>
+          <TimeSelector selectedTime={selectedTime} onSelect={setSelectedTime} theme={theme} />
+        </View>
 
-        <TouchableOpacity style={[styles.emailBtn, { borderColor: theme.border }]} onPress={sendEmail}>
-          <Ionicons name="mail-outline" size={22} color={theme.title} />
-          <Text style={[styles.emailText, { color: theme.title }]}>Envoyer par email</Text>
-        </TouchableOpacity>
-
-        <Text style={[styles.noteText, { color: theme.textSecondary }]}>
-          Nous vous répondrons rapidement pour confirmer votre créneau
-        </Text>
+        {/* Summary */}
+        {selectedDate && selectedTime && (
+          <View style={[styles.summaryCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <Ionicons name="calendar" size={24} color="#DC1B78" />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={[styles.summaryTitle, { color: theme.title }]}>Votre réservation</Text>
+              <Text style={[styles.summaryText, { color: theme.textSecondary }]}>
+                {selectedDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} à {selectedTime}
+              </Text>
+            </View>
+          </View>
+        )}
       </ScrollView>
+
+      {/* Bottom Button */}
+      <View style={[styles.bottomBar, { backgroundColor: theme.background, borderTopColor: theme.border }]}>
+        <TouchableOpacity 
+          style={[styles.googleBtn, (!selectedDate || !selectedTime) && styles.googleBtnDisabled]} 
+          onPress={openGoogleCalendar}
+          disabled={!selectedDate || !selectedTime}
+        >
+          <Ionicons name="calendar" size={22} color="#FFF" />
+          <Text style={styles.googleBtnText}>Ajouter à Google Calendar</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -216,7 +264,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
   headerBtn: { width: 40, height: 40, justifyContent: 'center' },
   headerTitle: { color: '#FFF', fontSize: 20, fontWeight: '700' },
-  content: { padding: spacing.lg, paddingBottom: 40 },
+  content: { padding: spacing.lg, paddingBottom: 120 },
   errorState: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   errorText: { fontSize: 16, marginTop: 12 },
   backBtn: { backgroundColor: '#DC1B78', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, marginTop: 20 },
@@ -235,16 +283,31 @@ const styles = StyleSheet.create({
   price: { fontSize: 28, fontWeight: '800', color: '#DC1B78' },
   duration: { fontSize: 14 },
   
-  // Form
-  formCard: { borderRadius: 16, borderWidth: 1, padding: spacing.lg, marginBottom: spacing.xl, ...shadows.sm },
-  formTitle: { fontSize: 18, fontWeight: '700', marginBottom: spacing.lg },
-  input: { borderWidth: 1, borderRadius: 12, padding: spacing.md, fontSize: 15, marginBottom: spacing.md },
-  textArea: { borderWidth: 1, borderRadius: 12, padding: spacing.md, fontSize: 15, minHeight: 80 },
+  // Sections
+  section: { marginBottom: spacing.xl },
+  sectionTitle: { fontSize: 18, fontWeight: '700', marginBottom: spacing.md },
   
-  // Buttons
-  whatsappBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#25D366', paddingVertical: 16, borderRadius: 12, gap: 10, ...shadows.md },
-  whatsappText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
-  emailBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, paddingVertical: 16, borderRadius: 12, marginTop: spacing.md, gap: 10 },
-  emailText: { fontSize: 16, fontWeight: '600' },
-  noteText: { fontSize: 13, textAlign: 'center', marginTop: spacing.lg },
+  // Date selector
+  dateScroll: { gap: 10 },
+  dateItem: { width: 56, height: 72, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  dateItemSelected: { borderWidth: 2, backgroundColor: 'rgba(220,27,120,0.1)' },
+  dateDay: { fontSize: 12, fontWeight: '500' },
+  dateNum: { fontSize: 20, fontWeight: '700', marginTop: 2 },
+  
+  // Time selector
+  timeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  timeItem: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 10, borderWidth: 1 },
+  timeItemSelected: { borderWidth: 2 },
+  timeText: { fontSize: 15, fontWeight: '600' },
+  
+  // Summary
+  summaryCard: { flexDirection: 'row', alignItems: 'center', padding: spacing.lg, borderRadius: 16, borderWidth: 1, ...shadows.sm },
+  summaryTitle: { fontSize: 16, fontWeight: '700' },
+  summaryText: { fontSize: 14, marginTop: 2 },
+  
+  // Bottom bar
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: spacing.lg, borderTopWidth: 1, paddingBottom: 34 },
+  googleBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#4285F4', paddingVertical: 16, borderRadius: 12, gap: 10, ...shadows.md },
+  googleBtnDisabled: { backgroundColor: '#4285F480' },
+  googleBtnText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
 });
